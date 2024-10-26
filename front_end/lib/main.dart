@@ -27,15 +27,18 @@ class RecognizePage extends StatefulWidget {
 
 class _RecognizePageState extends State<RecognizePage> {
   String recognizedText = "認識結果がここに表示されます";
+  String keyword = "授業中";
 
   // Flaskサーバーからデータを取得する関数
   Future<void> fetchRecognizedText() async {
     try {
-      final response = await http.get(Uri.parse('http://localhost:5000/recognize'));
+      final response =
+          await http.get(Uri.parse('http://localhost:5000/recognize'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
           recognizedText = data['recognized_text'];
+          keyword = data['keyword'];
         });
       } else {
         print('サーバーからデータを取得できませんでした。ステータスコード: ${response.statusCode}');
@@ -52,7 +55,8 @@ class _RecognizePageState extends State<RecognizePage> {
   void initState() {
     super.initState();
     // 1秒ごとにAPIからデータを取得するタイマーを設定
-    timer = Timer.periodic(Duration(seconds: 1), (Timer t) => fetchRecognizedText());
+    timer = Timer.periodic(
+        Duration(seconds: 1), (Timer t) => fetchRecognizedText());
   }
 
   @override
@@ -70,13 +74,22 @@ class _RecognizePageState extends State<RecognizePage> {
       ),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            recognizedText,
-            style: TextStyle(fontSize: 24),
-            textAlign: TextAlign.center,
-          ),
-        ),
+            padding: const EdgeInsets.all(16.0),
+            child:
+                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text(
+                recognizedText,
+                style: TextStyle(fontSize: 24),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 20),
+              Text(
+                keyword,
+                style: TextStyle(
+                    fontSize: 20,
+                    color: (keyword == "授業中") ? Colors.green : Colors.red),
+              ),
+            ])),
       ),
     );
   }

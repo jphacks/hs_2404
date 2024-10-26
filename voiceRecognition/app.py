@@ -56,7 +56,7 @@ def recognize_audio():
                     else:
                         partial_result = recognizer.PartialResult()
                         partial_text = json.loads(partial_result)["partial"]
-                        print("部分的な認識結果:", partial_text)
+                        # print("部分的な認識結果:", partial_text)
                 except queue.Empty:
                     print("オーディオデータの取得タイムアウト")  # デバッグ用
                     break
@@ -66,7 +66,14 @@ def recognize_audio():
 # /recognizeエンドポイントを作成
 @app.route('/recognize', methods=['GET'])
 def get_recognized_text():
-    return jsonify({'recognized_text': recognized_text})
+    keyword = "授業中"
+    # キーワードが含まれているかどうかを判定
+    keyword_included = ["重要", "大事", "課題", "提出", "テスト", "レポート", "締め切り", "期限"]
+    for k in keyword_included:
+        if k in recognized_text:
+            keyword = k
+            break
+    return jsonify({'recognized_text': recognized_text, 'keyword': keyword})
 
 # Flaskサーバーの実行
 if __name__ == '__main__':
