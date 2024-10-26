@@ -25,6 +25,7 @@ client = get_speech_client()
 # キューと変数の初期化
 audio_queue = queue.Queue()
 recognized_text = ""  # 認識結果を保持する変数
+partial_text = ""  # 部分的な認識結果を保持する変数
 
 # 音声をキューに追加するコールバック関数
 def audio_callback(indata, frames, time, status):
@@ -35,6 +36,7 @@ def audio_callback(indata, frames, time, status):
 # Google Speech-to-Textストリーミング認識
 def recognize_audio():
     global recognized_text
+    global partial_text
 
     # ストリーミング認識設定
     config = speech.RecognitionConfig(
@@ -74,7 +76,7 @@ def get_recognized_text():
     # キーワードが含まれているかどうかを判定
     keyword_included = ["重要", "大事", "課題", "提出", "テスト", "レポート", "締め切り", "期限"]
     for k in keyword_included:
-        if k in recognized_text:
+        if k in partial_text:
             keyword = k
             break
     return jsonify({'recognized_text': recognized_text, 'keyword': keyword})

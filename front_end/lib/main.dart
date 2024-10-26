@@ -29,7 +29,7 @@ class _RecognizePageState extends State<RecognizePage> {
   Future<void> fetchRecognizedText() async {
     try {
       final response = await http
-          .get(Uri.parse('http://192.168.1.100:5000/recognize')); // エミュレーターの場合
+          .get(Uri.parse('http://localhost:5000/recognize')); // エミュレーターの場合
       // 実機の場合は localhost を Flask サーバーの IP アドレスに変更
       // final response = await http.get(Uri.parse('http://<your_ip>:5000/recognize'));
 
