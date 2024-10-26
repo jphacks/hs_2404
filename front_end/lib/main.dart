@@ -24,12 +24,13 @@ class RecognizePage extends StatefulWidget {
 class _RecognizePageState extends State<RecognizePage> {
   String recognizedText = "認識結果がここに表示されます";
   bool isRecognizing = false;
+  String keyword = "授業中";
 
   // Flaskサーバーからデータを取得する関数
   Future<void> fetchRecognizedText() async {
     try {
       final response = await http
-          .get(Uri.parse('http://192.168.1.100:5000/recognize')); // エミュレーターの場合
+          .get(Uri.parse('http://localhost:5000/recognize')); // エミュレーターの場合
       // 実機の場合は localhost を Flask サーバーの IP アドレスに変更
       // final response = await http.get(Uri.parse('http://<your_ip>:5000/recognize'));
 
@@ -37,6 +38,7 @@ class _RecognizePageState extends State<RecognizePage> {
         final data = jsonDecode(response.body);
         setState(() {
           recognizedText = data['recognized_text'] ?? "データが空です";
+          keyword = data['keyword'];
         });
       } else {
         print('サーバーからデータを取得できませんでした。ステータスコード: ${response.statusCode}');
@@ -90,23 +92,32 @@ class _RecognizePageState extends State<RecognizePage> {
       ),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                recognizedText,
-                style: TextStyle(fontSize: 24),
-                textAlign: TextAlign.center,
+            padding: const EdgeInsets.all(16.0),
+            child:
+                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    recognizedText,
+                    style: TextStyle(fontSize: 24),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: isRecognizing ? stopRecoding : startRecording,
+                    child: Text(isRecognizing ? '停止' : '開始'),
+                  ),
+                ],
               ),
               SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: isRecognizing ? stopRecoding : startRecording,
-                child: Text(isRecognizing ? '停止' : '開始'),
+              Text(
+                keyword,
+                style: TextStyle(
+                    fontSize: 20,
+                    color: (keyword == "授業中") ? Colors.green : Colors.red),
               ),
-            ],
-          ),
-        ),
+            ])),
       ),
     );
   }
