@@ -32,6 +32,8 @@ def audio_callback(indata, frames, time, status):
         print(status, file=sys.stderr)
     audio_queue.put(bytes(indata))
 
+
+
 # Google Speech-to-Textストリーミング認識
 def recognize_audio():
     global recognized_text

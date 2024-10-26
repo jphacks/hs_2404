@@ -23,6 +23,7 @@ class RecognizePage extends StatefulWidget {
 
 class _RecognizePageState extends State<RecognizePage> {
   String recognizedText = "認識結果がここに表示されます";
+  bool isRecognizing = false;
 
   // Flaskサーバーからデータを取得する関数
   Future<void> fetchRecognizedText() async {
@@ -66,6 +67,21 @@ class _RecognizePageState extends State<RecognizePage> {
     super.dispose();
   }
 
+  void startRecording() async {
+    setState(() {
+      isRecognizing = true;
+      recognizedText = "音声認識中...";
+    });
+  }
+
+  void stopRecoding() {
+    setState(() {
+      isRecognizing = false;
+      recognizedText = "認識結果がここに表示されます"; // もしくは最新の認識結果を表示
+    });
+    // ここで音声認識を停止するAPIを呼び出す処理を追加することができます
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,10 +91,20 @@ class _RecognizePageState extends State<RecognizePage> {
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Text(
-            recognizedText,
-            style: TextStyle(fontSize: 24),
-            textAlign: TextAlign.center,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                recognizedText,
+                style: TextStyle(fontSize: 24),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: isRecognizing ? stopRecoding : startRecording,
+                child: Text(isRecognizing ? '停止' : '開始'),
+              ),
+            ],
           ),
         ),
       ),
