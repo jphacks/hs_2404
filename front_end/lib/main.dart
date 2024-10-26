@@ -3,11 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
+class SpeechToTextApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -31,17 +27,24 @@ class _RecognizePageState extends State<RecognizePage> {
   // Flaskサーバーからデータを取得する関数
   Future<void> fetchRecognizedText() async {
     try {
-      final response = await http.get(Uri.parse('http://localhost:5000/recognize'));
+      final response = await http
+          .get(Uri.parse('http://192.168.1.100:5000/recognize')); // エミュレーターの場合
+      // 実機の場合は localhost を Flask サーバーの IP アドレスに変更
+      // final response = await http.get(Uri.parse('http://<your_ip>:5000/recognize'));
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          recognizedText = data['recognized_text'];
+          recognizedText = data['recognized_text'] ?? "データが空です";
         });
       } else {
         print('サーバーからデータを取得できませんでした。ステータスコード: ${response.statusCode}');
       }
     } catch (e) {
       print('エラーが発生しました: $e');
+      setState(() {
+        recognizedText = "データ取得エラー";
+      });
     }
   }
 
@@ -52,7 +55,8 @@ class _RecognizePageState extends State<RecognizePage> {
   void initState() {
     super.initState();
     // 1秒ごとにAPIからデータを取得するタイマーを設定
-    timer = Timer.periodic(Duration(seconds: 1), (Timer t) => fetchRecognizedText());
+    timer = Timer.periodic(
+        Duration(seconds: 1), (Timer t) => fetchRecognizedText());
   }
 
   @override
@@ -80,4 +84,8 @@ class _RecognizePageState extends State<RecognizePage> {
       ),
     );
   }
+}
+
+void main() {
+  runApp(SpeechToTextApp());
 }
