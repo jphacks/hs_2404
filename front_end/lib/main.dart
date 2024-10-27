@@ -10,7 +10,7 @@ class SpeechToTextApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '音声認識アプリ',
+      title: 'taskEcho',
       theme: ThemeData(
         brightness: Brightness.dark,
         primarySwatch: Colors.cyan,
@@ -28,9 +28,11 @@ class RecognizePage extends StatefulWidget {
 
 class _RecognizePageState extends State<RecognizePage> {
   String recognizedText = "認識結果がここに表示されます";
+  String summarizedText = "要約データがここに表示されます";
   bool isRecognizing = false;
   String keyword = "授業中";
   Timer? timer;
+  Timer? flashTimer;
   bool isFlashing = false; // 点滅フラグ
   bool showGradient = true; // デフォルトの背景をグラデーションに戻すためのフラグ
   bool isModalVisible = false; // モーダル表示のフラグ
@@ -46,6 +48,7 @@ class _RecognizePageState extends State<RecognizePage> {
         final data = jsonDecode(response.body);
         setState(() {
           recognizedText = data['recognized_text'] ?? "データが空です";
+          summarizedText = data['summarized_text'] ?? "要約データが空です";
           keyword = data['keyword'];
           if (keyword != "授業中") {
             startFlashing(); // 点滅開始
@@ -83,7 +86,7 @@ class _RecognizePageState extends State<RecognizePage> {
     if (!isFlashing) {
       isFlashing = true;
       showGradient = false; // 点滅中はグラデーションを非表示に
-      timer = Timer.periodic(Duration(milliseconds: 500), (Timer t) {
+      flashTimer = Timer.periodic(Duration(milliseconds: 500), (Timer t) {
         setState(() {
           // 交互に赤と白を切り替える
           backgroundColor = (backgroundColor == Colors.redAccent)
@@ -92,12 +95,17 @@ class _RecognizePageState extends State<RecognizePage> {
         });
       });
     }
+    isFlashing = false;
   }
 
   // 点滅を停止する
   void stopFlashing() {
+    if (flashTimer != null) {
+      flashTimer?.cancel();
+      flashTimer = null;
+    }
     isFlashing = false;
-    timer?.cancel();
+    flashTimer?.cancel();
     setState(() {
       showGradient = true; // 背景をグラデーションに戻す
     });
@@ -283,10 +291,21 @@ class _RecognizePageState extends State<RecognizePage> {
                       ],
                     ),
                     child: SingleChildScrollView(
-                      child: Text(
-                        recognizedText,
-                        style: TextStyle(fontSize: 24, color: Colors.white),
-                        textAlign: TextAlign.center,
+                      child: Column(
+                        children: [
+                          Text(
+                            recognizedText,
+                            style: TextStyle(fontSize: 24, color: Colors.white),
+                            textAlign: TextAlign.center,
+                          ),
+                          Text(
+                            summarizedText, // 新しいテキストをここに追加
+                            style: TextStyle(
+                                fontSize: 20,
+                                color: Colors.yellow), // 新しいテキストのスタイルを設定
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
                   ),
