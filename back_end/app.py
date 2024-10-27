@@ -97,7 +97,7 @@ def get_recognized_text():
     keyword = "授業中"
     keyword_included = ["重要", "大事", "課題", "提出", "テスト", "レポート", "締め切り", "期限"]
     for k in keyword_included:
-        if k in partial_text:
+        if k in partial_text[-20:]:
             keyword = k
             break
     return jsonify({'recognized_text': recognized_text, 'keyword': keyword})
