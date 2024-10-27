@@ -26,6 +26,8 @@ class _RecognizePageState extends State<RecognizePage> {
   bool isRecognizing = false;
   String keyword = "授業中";
   Timer? timer;
+  bool isFlashing = false; // 点滅フラグ
+  Color backgroundColor = Colors.white; // 初期背景色
 
   // サーバーからデータを取得する関数
   Future<void> fetchRecognizedText() async {
@@ -38,6 +40,11 @@ class _RecognizePageState extends State<RecognizePage> {
         setState(() {
           recognizedText = data['recognized_text'] ?? "データが空です";
           keyword = data['keyword'];
+          if (keyword != "授業中") {
+            startFlashing(); // 点滅開始
+          } else {
+            stopFlashing(); // 点滅停止
+          }
         });
       } else {
         print('サーバーからデータを取得できませんでした。ステータスコード: ${response.statusCode}');
@@ -48,6 +55,28 @@ class _RecognizePageState extends State<RecognizePage> {
         recognizedText = "データ取得エラー";
       });
     }
+  }
+
+  // 点滅を開始する
+  void startFlashing() {
+    if (!isFlashing) {
+      isFlashing = true;
+      timer = Timer.periodic(Duration(milliseconds: 500), (Timer t) {
+        setState(() {
+          backgroundColor =
+              (backgroundColor == Colors.red) ? Colors.white : Colors.red;
+        });
+      });
+    }
+  }
+
+  // 点滅を停止する
+  void stopFlashing() {
+    isFlashing = false;
+    timer?.cancel();
+    setState(() {
+      backgroundColor = Colors.white; // 背景を白に戻す
+    });
   }
 
   // 音声認識の開始
@@ -91,6 +120,7 @@ class _RecognizePageState extends State<RecognizePage> {
 
     // タイマーが設定されていればキャンセル
     timer?.cancel();
+    stopFlashing(); // 点滅停止
 
     // サーバーの/stopエンドポイントにリクエストを送信
     try {
@@ -117,30 +147,34 @@ class _RecognizePageState extends State<RecognizePage> {
       appBar: AppBar(
         title: Text('リアルタイム音声認識結果'),
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                recognizedText,
-                style: TextStyle(fontSize: 24),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: isRecognizing ? stopRecording : startRecording,
-                child: Text(isRecognizing ? '停止' : '開始'),
-              ),
-              SizedBox(height: 20),
-              Text(
-                keyword,
-                style: TextStyle(
-                    fontSize: 20,
-                    color: (keyword == "授業中") ? Colors.green : Colors.red),
-              ),
-            ],
+      body: AnimatedContainer(
+        duration: Duration(milliseconds: 500),
+        color: backgroundColor,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  recognizedText,
+                  style: TextStyle(fontSize: 24),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: isRecognizing ? stopRecording : startRecording,
+                  child: Text(isRecognizing ? '停止' : '開始'),
+                ),
+                SizedBox(height: 20),
+                Text(
+                  keyword,
+                  style: TextStyle(
+                      fontSize: 20,
+                      color: (keyword == "授業中") ? Colors.green : Colors.red),
+                ),
+              ],
+            ),
           ),
         ),
       ),
