@@ -8,6 +8,8 @@ from google.oauth2 import service_account
 from flask import Flask, jsonify
 from flask_cors import CORS
 from threading import Thread
+from dotenv import load_dotenv
+import google.generativeai as genai
 
 # Flaskサーバーの初期化
 app = Flask(__name__)
@@ -40,6 +42,7 @@ def recognize_audio():
     global recognized_text
     global partial_text
     global is_recognizing
+    global summary
 
     # ストリーミング認識設定
     config = speech.RecognitionConfig(
@@ -67,9 +70,17 @@ def recognize_audio():
                 if result.is_final:
                     recognized_text = result.alternatives[0].transcript
                     print("認識結果:", recognized_text)
+                    summary = summarize_text(recognized_text)
+                    print("要約結果:", summary)
                 else:
                     partial_text = result.alternatives[0].transcript
                     print("部分的な認識結果:", partial_text)
+
+def summarize_text(text):
+    prompt = f"次のテキストを要約して結果のみをください.: {text}"
+    gemini_pro = genai.GenerativeModel("gemini-pro")
+    response = gemini_pro.generate_content(prompt)
+    return response.text
 
 # 音声認識を開始するエンドポイント
 @app.route('/start', methods=['POST'])
