@@ -29,6 +29,7 @@ class _RecognizePageState extends State<RecognizePage> {
   bool isRecognizing = false;
   String keyword = "授業中";
   Timer? timer;
+  Timer? flashTimer;
   bool isFlashing = false; // 点滅フラグ
   bool showGradient = true; // デフォルトの背景をグラデーションに戻すためのフラグ
   bool isModalVisible = false; // モーダル表示のフラグ
@@ -68,12 +69,11 @@ class _RecognizePageState extends State<RecognizePage> {
     if (!isFlashing) {
       isFlashing = true;
       showGradient = false; // 点滅中はグラデーションを非表示に
-      timer = Timer.periodic(Duration(milliseconds: 500), (Timer t) {
+      flashTimer = Timer.periodic(Duration(milliseconds: 500), (Timer t) {
         setState(() {
           // 交互に赤と白を切り替える
-          backgroundColor = (backgroundColor == Colors.redAccent)
-              ? Colors.white
-              : Colors.redAccent;
+          backgroundColor =
+              (backgroundColor == Colors.redAccent) ? Colors.white : Colors.redAccent;
         });
       });
     }
@@ -87,7 +87,7 @@ class _RecognizePageState extends State<RecognizePage> {
       timer = null;
     }
     isFlashing = false;
-    timer?.cancel();
+    flashTimer?.cancel();
     setState(() {
       showGradient = true; // 背景をグラデーションに戻す
     });
@@ -241,8 +241,7 @@ class _RecognizePageState extends State<RecognizePage> {
                       backgroundColor: isRecognizing
                           ? Colors.redAccent
                           : Colors.tealAccent, // より視認性の高い色に変更
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
@@ -328,8 +327,7 @@ class _RecognizePageState extends State<RecognizePage> {
                           SizedBox(height: 30),
                           ListTile(
                             leading: Icon(Icons.mic, color: Colors.cyanAccent),
-                            title: Text('音声認識',
-                                style: TextStyle(color: Colors.white)),
+                            title: Text('音声認識', style: TextStyle(color: Colors.white)),
                             onTap: () {
                               // 現在のページが"音声認識"なので何もせずモーダルを閉じる
                               toggleModal();
@@ -338,8 +336,7 @@ class _RecognizePageState extends State<RecognizePage> {
                           Divider(color: Colors.grey),
                           ListTile(
                             leading: Icon(Icons.task, color: Colors.cyanAccent),
-                            title: Text('課題管理',
-                                style: TextStyle(color: Colors.white)),
+                            title: Text('課題管理', style: TextStyle(color: Colors.white)),
                             onTap: () {
                               // 課題管理画面を追加予定
                               toggleModal();
@@ -347,10 +344,8 @@ class _RecognizePageState extends State<RecognizePage> {
                           ),
                           Divider(color: Colors.grey),
                           ListTile(
-                            leading:
-                                Icon(Icons.summarize, color: Colors.cyanAccent),
-                            title: Text('要約一覧',
-                                style: TextStyle(color: Colors.white)),
+                            leading: Icon(Icons.summarize, color: Colors.cyanAccent),
+                            title: Text('要約一覧', style: TextStyle(color: Colors.white)),
                             onTap: () {
                               // 要約画面を追加予定
                               toggleModal();
@@ -358,10 +353,8 @@ class _RecognizePageState extends State<RecognizePage> {
                           ),
                           Divider(color: Colors.grey),
                           ListTile(
-                            leading:
-                                Icon(Icons.settings, color: Colors.cyanAccent),
-                            title: Text('設定',
-                                style: TextStyle(color: Colors.white)),
+                            leading: Icon(Icons.settings, color: Colors.cyanAccent),
+                            title: Text('設定', style: TextStyle(color: Colors.white)),
                             onTap: () {
                               // 設定画面を追加予定
                               toggleModal();
