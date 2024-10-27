@@ -57,6 +57,7 @@ class _RecognizePageState extends State<RecognizePage> {
         // 時刻情報を含むか確認し、GoogleカレンダーのURLを生成して開く
         String? eventTime = await extractTime(recognizedText);
         if (eventTime != null) {
+          print("やったー！時刻情報を取得しました: $eventTime");
           String calendarUrl =
               generateGoogleCalendarUrl(eventTime, recognizedText);
           if (await canLaunchUrl(Uri.parse(calendarUrl))) {
@@ -95,10 +96,6 @@ class _RecognizePageState extends State<RecognizePage> {
 
   // 点滅を停止する
   void stopFlashing() {
-    if (timer != null) {
-      timer?.cancel(); // タイマーをキャンセルする
-      timer = null;
-    }
     isFlashing = false;
     timer?.cancel();
     setState(() {
@@ -121,9 +118,18 @@ class _RecognizePageState extends State<RecognizePage> {
       return null;
     }
 
+    if (text.isEmpty) {
+      print('sentenceパラメータが空です');
+      return null;
+    }
+
     final url = Uri.parse('https://labs.goo.ne.jp/api/chrono');
     final headers = {'Content-Type': 'application/json'};
-    final body = jsonEncode({'app_id': apiKey, 'sentence': text});
+
+    final body = jsonEncode({
+      'app_id': apiKey,
+      'sentence': text,
+    });
 
     try {
       print('Sending request to $url with body: $body');
@@ -132,7 +138,8 @@ class _RecognizePageState extends State<RecognizePage> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['datetime_list'] != null && data['datetime_list'].isNotEmpty) {
-          final datetime = data['datetime_list'][0]['datetime'];
+          final datetimeList = data['datetime_list'];
+          final datetime = datetimeList.map((item) => item[1]).join(', ');
           print(datetime);
           return datetime;
         } else {
@@ -144,24 +151,22 @@ class _RecognizePageState extends State<RecognizePage> {
       }
     } catch (e) {
       print('エラーが発生しました: $e');
-      setState(() {
-        recognizedText = "データ取得エラー";
-      });
     }
     return null;
   }
 
   // GoogleカレンダーのURLを生成する関数
-  String generateGoogleCalendarUrl(String time, String description) {
-    final now = DateTime.now();
-    final dateFormat = DateFormat('yyyyMMdd');
-    final timeFormat = DateFormat('HHmmss');
-    final date = dateFormat.format(now);
-    final startTime = timeFormat.format(DateFormat('HH:mm').parse(time));
-    final endTime = timeFormat
-        .format(DateFormat('HH:mm').parse(time).add(Duration(hours: 1)));
+  String generateGoogleCalendarUrl(String date, String description) {
+    try {
+      final dateFormat = DateFormat('YYYYMMDD');
+      final parsedDate = DateTime.parse(date);
+      final formattedDate = dateFormat.format(parsedDate);
 
-    return 'https://www.google.com/calendar/render?action=TEMPLATE&text=$description&dates=${date}T$startTime/${date}T$endTime';
+      return 'https://www.google.com/calendar/render?action=TEMPLATE&dates=${formattedDate}/{formattedDate}';
+    } catch (e) {
+      print('日付のフォーマットエラー: $e');
+      return '';
+    }
   }
 
   // 音声認識の開始
