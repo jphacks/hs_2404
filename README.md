@@ -9,14 +9,10 @@
 - 音声認識した内容を要約する。
 - カレンダーを開ける(自動的にスケジュールを作ってくれるようになる予定)
   
-![スクリーンショット 2024-10-27 154215](https://github.com/user-attachments/assets/e4765b11-eb7b-4161-9146-571235d7b45f)
-
 ### 特長
 #### 1. 重要な話をしているタイミングを知らせてくれる
-https://github.com/user-attachments/assets/5e6a698b-e225-48a3-8963-6b3b07244997
 #### 2. 要約を比較的短期で出してくれる
 #### 3. すぐにタスクをカレンダーに追加できる(タブは無限に開く)
-![スクリーンショット 2024-10-27 154725](https://github.com/user-attachments/assets/4bf3d188-9205-496d-9608-0c2dd1ac0f09)
 
 ### 解決出来ること
 * 集中が途切れ、重要な話を聞き逃さないようにすることができる
@@ -52,3 +48,6 @@ https://github.com/user-attachments/assets/5e6a698b-e225-48a3-8963-6b3b07244997
 * 生成AIによる要約
 * 時刻情報を検知してgoogleカレンダーを開く
 
+![スクリーンショット 2024-10-27 154215](https://github.com/user-attachments/assets/e4765b11-eb7b-4161-9146-571235d7b45f)
+https://github.com/user-attachments/assets/5e6a698b-e225-48a3-8963-6b3b07244997
+![スクリーンショット 2024-10-27 154725](https://github.com/user-attachments/assets/4bf3d188-9205-496d-9608-0c2dd1ac0f09)
