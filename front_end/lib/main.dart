@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SpeechToTextApp extends StatelessWidget {
   @override
@@ -53,6 +56,20 @@ class _RecognizePageState extends State<RecognizePage> {
             stopFlashing(); // 点滅停止
           }
         });
+
+        // 時刻情報を含むか確認し、GoogleカレンダーのURLを生成して開く
+        String? eventTime = await extractTime(recognizedText);
+        if (eventTime != null) {
+          print("やったー！時刻情報を取得しました: $eventTime");
+          String calendarUrl =
+              generateGoogleCalendarUrl(eventTime, recognizedText);
+          if (await canLaunchUrl(Uri.parse(calendarUrl))) {
+            await launchUrl(Uri.parse(calendarUrl));
+            print('カレンダーURLを開きました。');
+          } else {
+            print('カレンダーURLを開けませんでした。');
+          }
+        }
       } else {
         print('サーバーからデータを取得できませんでした。ステータスコード: ${response.statusCode}');
       }
@@ -92,6 +109,72 @@ class _RecognizePageState extends State<RecognizePage> {
     setState(() {
       showGradient = true; // 背景をグラデーションに戻す
     });
+  }
+
+  // // 文字列から時刻情報を抽出する関数
+  // String? extractTime(String text) {
+  //   final timeRegExp = RegExp(r'(\d{1,2}:\d{2})');
+  //   final match = timeRegExp.firstMatch(text);
+  //   return match?.group(0);
+  // }
+
+  // gooラボの時刻情報正規化APIを呼び出す関数
+  Future<String?> extractTime(String text) async {
+    final apiKey = dotenv.env['API_KEY']; // 環境変数からAPIキーを取得
+    if (apiKey == null) {
+      print('APIキーが設定されていません');
+      return null;
+    }
+
+    if (text.isEmpty) {
+      print('sentenceパラメータが空です');
+      return null;
+    }
+
+    final url = Uri.parse('https://labs.goo.ne.jp/api/chrono');
+    final headers = {'Content-Type': 'application/json'};
+
+    final body = jsonEncode({
+      'app_id': apiKey,
+      'sentence': text,
+    });
+
+    try {
+      print('Sending request to $url with body: $body');
+      final response = await http.post(url, headers: headers, body: body);
+      print('Received response with status code: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['datetime_list'] != null && data['datetime_list'].isNotEmpty) {
+          final datetimeList = data['datetime_list'];
+          final datetime = datetimeList.map((item) => item[1]).join(', ');
+          print(datetime);
+          return datetime;
+        } else {
+          print('datetime_listが空です。');
+        }
+      } else {
+        print('時刻情報正規化APIの呼び出しに失敗しました。ステータスコード: ${response.statusCode}');
+        print('レスポンスボディ: ${response.body}');
+      }
+    } catch (e) {
+      print('エラーが発生しました: $e');
+    }
+    return null;
+  }
+
+  // GoogleカレンダーのURLを生成する関数
+  String generateGoogleCalendarUrl(String date, String description) {
+    try {
+      final dateFormat = DateFormat('YYYYMMDD');
+      final parsedDate = DateTime.parse(date);
+      final formattedDate = dateFormat.format(parsedDate);
+
+      return 'https://www.google.com/calendar/render?action=TEMPLATE&dates=${formattedDate}/{formattedDate}';
+    } catch (e) {
+      print('日付のフォーマットエラー: $e');
+      return '';
+    }
   }
 
   // 音声認識の開始
@@ -381,6 +464,7 @@ class _RecognizePageState extends State<RecognizePage> {
   }
 }
 
-void main() {
+void main() async {
+  await dotenv.load(fileName: ".env"); // .envファイルから環境変数を読み込む
   runApp(SpeechToTextApp());
 }
