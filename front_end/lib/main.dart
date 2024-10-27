@@ -7,9 +7,11 @@ class SpeechToTextApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '音声認識結果表示',
+      title: '音声認識アプリ',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        brightness: Brightness.dark,
+        primarySwatch: Colors.cyan,
+        scaffoldBackgroundColor: Color(0xFF0F0F1F), // ダークテーマ背景色
       ),
       home: RecognizePage(),
     );
@@ -27,7 +29,9 @@ class _RecognizePageState extends State<RecognizePage> {
   String keyword = "授業中";
   Timer? timer;
   bool isFlashing = false; // 点滅フラグ
-  Color backgroundColor = Colors.white; // 初期背景色
+  bool showGradient = true; // デフォルトの背景をグラデーションに戻すためのフラグ
+  bool isModalVisible = false; // モーダル表示のフラグ
+  Color backgroundColor = Colors.indigoAccent; // 点滅中の背景色管理用
 
   // サーバーからデータを取得する関数
   Future<void> fetchRecognizedText() async {
@@ -57,14 +61,17 @@ class _RecognizePageState extends State<RecognizePage> {
     }
   }
 
-  // 点滅を開始する
+  // 点滅を開始する（keywordの状態によって切り替え）
   void startFlashing() {
     if (!isFlashing) {
       isFlashing = true;
+      showGradient = false; // 点滅中はグラデーションを非表示に
       timer = Timer.periodic(Duration(milliseconds: 500), (Timer t) {
         setState(() {
-          backgroundColor =
-              (backgroundColor == Colors.red) ? Colors.white : Colors.red;
+          // 交互に赤と白を切り替える
+          backgroundColor = (backgroundColor == Colors.redAccent)
+              ? Colors.white
+              : Colors.redAccent;
         });
       });
     }
@@ -75,7 +82,7 @@ class _RecognizePageState extends State<RecognizePage> {
     isFlashing = false;
     timer?.cancel();
     setState(() {
-      backgroundColor = Colors.white; // 背景を白に戻す
+      showGradient = true; // 背景をグラデーションに戻す
     });
   }
 
@@ -135,6 +142,13 @@ class _RecognizePageState extends State<RecognizePage> {
     }
   }
 
+  // モーダルウィンドウの切り替え
+  void toggleModal() {
+    setState(() {
+      isModalVisible = !isModalVisible;
+    });
+  }
+
   @override
   void dispose() {
     timer?.cancel();
@@ -144,39 +158,205 @@ class _RecognizePageState extends State<RecognizePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('リアルタイム音声認識結果'),
-      ),
-      body: AnimatedContainer(
-        duration: Duration(milliseconds: 500),
-        color: backgroundColor,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  recognizedText,
-                  style: TextStyle(fontSize: 24),
-                  textAlign: TextAlign.center,
+      body: Stack(
+        children: [
+          // グラデーション背景または点滅する背景の表示
+          showGradient
+              ? AnimatedContainer(
+                  duration: Duration(milliseconds: 500),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Colors.indigoAccent, Colors.deepPurpleAccent],
+                    ),
+                  ),
+                )
+              : AnimatedContainer(
+                  duration: Duration(milliseconds: 500),
+                  color: backgroundColor, // 点滅する背景色
                 ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: isRecognizing ? stopRecording : startRecording,
-                  child: Text(isRecognizing ? '停止' : '開始'),
-                ),
-                SizedBox(height: 20),
-                Text(
-                  keyword,
-                  style: TextStyle(
-                      fontSize: 20,
-                      color: (keyword == "授業中") ? Colors.green : Colors.red),
-                ),
-              ],
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // 認識結果を表示するカード（縦に広く調整）
+                  Container(
+                    width: double.infinity,
+                    height: 200, // 縦に広く調整
+                    padding: EdgeInsets.all(20.0),
+                    margin: EdgeInsets.symmetric(vertical: 20.0),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: SingleChildScrollView(
+                      child: Text(
+                        recognizedText,
+                        style: TextStyle(fontSize: 24, color: Colors.white),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  // 録音開始/停止ボタン（色と視認性の改善）
+                  ElevatedButton.icon(
+                    icon: Icon(
+                      isRecognizing ? Icons.stop : Icons.mic,
+                      color: Colors.black,
+                    ),
+                    label: Text(
+                      isRecognizing ? '停止' : '開始',
+                      style: TextStyle(color: Colors.black),
+                    ),
+                    onPressed: isRecognizing ? stopRecording : startRecording,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isRecognizing
+                          ? Colors.redAccent
+                          : Colors.tealAccent, // より視認性の高い色に変更
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      elevation: 10,
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  // キーワード表示
+                  Container(
+                    padding: EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      keyword,
+                      style: TextStyle(
+                        fontSize: 24,
+                        color: (keyword == "授業中")
+                            ? Colors.greenAccent
+                            : Colors.redAccent,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
+          // フローティングアクションボタン
+          Positioned(
+            bottom: 30,
+            right: 30,
+            child: FloatingActionButton(
+              onPressed: toggleModal,
+              backgroundColor: Colors.cyanAccent,
+              child: Icon(
+                isModalVisible ? Icons.close : Icons.menu,
+                color: Colors.black,
+              ),
+            ),
+          ),
+          // モーダルウィンドウの表示
+          if (isModalVisible)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: toggleModal,
+                child: Container(
+                  color: Colors.black87.withOpacity(0.8),
+                  child: Center(
+                    child: Container(
+                      width: MediaQuery.of(context).size.width * 0.8,
+                      height: MediaQuery.of(context).size.height * 0.6,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black45,
+                            blurRadius: 15,
+                            offset: Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'メニュー',
+                            style: TextStyle(
+                              fontSize: 30,
+                              color: Colors.cyanAccent,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 30),
+                          ListTile(
+                            leading: Icon(Icons.mic, color: Colors.cyanAccent),
+                            title: Text('音声認識',
+                                style: TextStyle(color: Colors.white)),
+                            onTap: () {
+                              // 現在のページが"音声認識"なので何もせずモーダルを閉じる
+                              toggleModal();
+                            },
+                          ),
+                          Divider(color: Colors.grey),
+                          ListTile(
+                            leading: Icon(Icons.task, color: Colors.cyanAccent),
+                            title: Text('課題管理',
+                                style: TextStyle(color: Colors.white)),
+                            onTap: () {
+                              // 課題管理画面を追加予定
+                              toggleModal();
+                            },
+                          ),
+                          Divider(color: Colors.grey),
+                          ListTile(
+                            leading:
+                                Icon(Icons.summarize, color: Colors.cyanAccent),
+                            title: Text('要約一覧',
+                                style: TextStyle(color: Colors.white)),
+                            onTap: () {
+                              // 要約画面を追加予定
+                              toggleModal();
+                            },
+                          ),
+                          Divider(color: Colors.grey),
+                          ListTile(
+                            leading:
+                                Icon(Icons.settings, color: Colors.cyanAccent),
+                            title: Text('設定',
+                                style: TextStyle(color: Colors.white)),
+                            onTap: () {
+                              // 設定画面を追加予定
+                              toggleModal();
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
