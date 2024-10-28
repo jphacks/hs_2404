@@ -28,6 +28,7 @@ https://github.com/user-attachments/assets/b9608e5d-a350-40c8-809f-4eed2f1ac4ea
 * 学生だけでなく、社会人も対象にしたい
   * 急に話を振られたときに質問や直前の話の内容を知ることができる
 * カレンダーへの追加まで自動化したい
+* 常に画面を開いている必要があるので、バックグランドで動く機能やノート機能を付ける
   
 ![スクリーンショット 2024-10-27 154010](https://github.com/user-attachments/assets/0d66e016-4b8b-485b-86bc-a6068ecca47e)
 
