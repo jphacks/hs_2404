@@ -12,7 +12,13 @@
 ### 特長
 #### 1. 重要な話をしているタイミングを知らせてくれる
 #### 2. 要約を比較的短期で出してくれる
+![スクリーンショット 2024-10-27 154215](https://github.com/user-attachments/assets/e4765b11-eb7b-4161-9146-571235d7b45f)
+
+https://github.com/user-attachments/assets/5e6a698b-e225-48a3-8963-6b3b07244997
 #### 3. すぐにタスクをカレンダーに追加できる(タブは無限に開く)
+![スクリーンショット 2024-10-27 154725](https://github.com/user-attachments/assets/4bf3d188-9205-496d-9608-0c2dd1ac0f09)
+
+https://github.com/user-attachments/assets/b9608e5d-a350-40c8-809f-4eed2f1ac4ea
 
 ### 解決出来ること
 * 集中が途切れ、重要な話を聞き逃さないようにすることができる
@@ -20,7 +26,11 @@
 ### 今後の展望
 * キーワードを自由に設定できるようにすることで汎用性を上げる
 * 学生だけでなく、社会人も対象にしたい
+  * 急に話を振られたときに質問や直前の話の内容を知ることができる
 * カレンダーへの追加まで自動化したい
+  
+![スクリーンショット 2024-10-27 154010](https://github.com/user-attachments/assets/0d66e016-4b8b-485b-86bc-a6068ecca47e)
+
 ### 注力したこと（こだわり等）
 * キーワードの認識速度
 
@@ -47,7 +57,3 @@
 * キーワードの検出
 * 生成AIによる要約
 * 時刻情報を検知してgoogleカレンダーを開く
-
-![スクリーンショット 2024-10-27 154215](https://github.com/user-attachments/assets/e4765b11-eb7b-4161-9146-571235d7b45f)
-https://github.com/user-attachments/assets/5e6a698b-e225-48a3-8963-6b3b07244997
-![スクリーンショット 2024-10-27 154725](https://github.com/user-attachments/assets/4bf3d188-9205-496d-9608-0c2dd1ac0f09)
