@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SpeechToTextApp extends StatelessWidget {
   @override
@@ -18,6 +21,7 @@ class SpeechToTextApp extends StatelessWidget {
   }
 }
 
+
 class RecognizePage extends StatefulWidget {
   @override
   _RecognizePageState createState() => _RecognizePageState();
@@ -25,7 +29,6 @@ class RecognizePage extends StatefulWidget {
 
 class _RecognizePageState extends State<RecognizePage> {
   String recognizedText = "認識結果がここに表示されます";
-  String summarizedText = "要約データがここに表示されます";
   bool isRecognizing = false;
   String keyword = "授業中";
   Timer? timer;
@@ -34,6 +37,7 @@ class _RecognizePageState extends State<RecognizePage> {
   bool showGradient = true; // デフォルトの背景をグラデーションに戻すためのフラグ
   bool isModalVisible = false; // モーダル表示のフラグ
   Color backgroundColor = Colors.indigoAccent; // 点滅中の背景色管理用
+  
 
   // サーバーからデータを取得する関数
   Future<void> fetchRecognizedText() async {
@@ -45,7 +49,6 @@ class _RecognizePageState extends State<RecognizePage> {
         final data = jsonDecode(response.body);
         setState(() {
           recognizedText = data['recognized_text'] ?? "データが空です";
-          summarizedText = data['summarized_text'] ?? "要約データが空です";
           keyword = data['keyword'];
           if (keyword != "授業中") {
             startFlashing(); // 点滅開始
@@ -53,6 +56,19 @@ class _RecognizePageState extends State<RecognizePage> {
             stopFlashing(); // 点滅停止
           }
         });
+
+        // 時刻情報を含むか確認し、GoogleカレンダーのURLを生成して開く
+        String? eventTime = await extractTime(recognizedText);
+        if (eventTime != null) {
+          String calendarUrl =
+              generateGoogleCalendarUrl(eventTime, recognizedText);
+          if (await canLaunchUrl(Uri.parse(calendarUrl))) {
+            await launchUrl(Uri.parse(calendarUrl));
+            print('カレンダーURLを開きました。');
+          } else {
+            print('カレンダーURLを開けませんでした。');
+          }
+        }
       } else {
         print('サーバーからデータを取得できませんでした。ステータスコード: ${response.statusCode}');
       }
@@ -72,25 +88,83 @@ class _RecognizePageState extends State<RecognizePage> {
       flashTimer = Timer.periodic(Duration(milliseconds: 500), (Timer t) {
         setState(() {
           // 交互に赤と白を切り替える
-          backgroundColor =
-              (backgroundColor == Colors.redAccent) ? Colors.white : Colors.redAccent;
+          backgroundColor = (backgroundColor == Colors.redAccent)
+              ? Colors.white
+              : Colors.redAccent;
         });
       });
     }
-    isFlashing = false;
   }
 
   // 点滅を停止する
   void stopFlashing() {
-    if (timer != null) {
-      timer?.cancel();
-      timer = null;
+    if (flashTimer != null) {
+      flashTimer?.cancel(); // タイマーをキャンセルする
+      flashTimer = null;
     }
     isFlashing = false;
     flashTimer?.cancel();
     setState(() {
       showGradient = true; // 背景をグラデーションに戻す
     });
+  }
+
+  // // 文字列から時刻情報を抽出する関数
+  // String? extractTime(String text) {
+  //   final timeRegExp = RegExp(r'(\d{1,2}:\d{2})');
+  //   final match = timeRegExp.firstMatch(text);
+  //   return match?.group(0);
+  // }
+
+  // gooラボの時刻情報正規化APIを呼び出す関数
+  Future<String?> extractTime(String text) async {
+    final apiKey = dotenv.env['API_KEY']; // 環境変数からAPIキーを取得
+    if (apiKey == null) {
+      print('APIキーが設定されていません');
+      return null;
+    }
+
+    final url = Uri.parse('https://labs.goo.ne.jp/api/chrono');
+    final headers = {'Content-Type': 'application/json'};
+    final body = jsonEncode({'app_id': apiKey, 'sentence': text});
+
+    try {
+      print('Sending request to $url with body: $body');
+      final response = await http.post(url, headers: headers, body: body);
+      print('Received response with status code: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['datetime_list'] != null && data['datetime_list'].isNotEmpty) {
+          final datetime = data['datetime_list'][0]['datetime'];
+          print(datetime);
+          return datetime;
+        } else {
+          print('datetime_listが空です。');
+        }
+      } else {
+        print('時刻情報正規化APIの呼び出しに失敗しました。ステータスコード: ${response.statusCode}');
+        print('レスポンスボディ: ${response.body}');
+      }
+    } catch (e) {
+      print('エラーが発生しました: $e');
+      setState(() {
+        recognizedText = "データ取得エラー";
+      });
+    }
+    return null;
+  }
+
+  // GoogleカレンダーのURLを生成する関数
+  String generateGoogleCalendarUrl(String time, String description) {
+    final now = DateTime.now();
+    final dateFormat = DateFormat('yyyyMMdd');
+    final timeFormat = DateFormat('HHmmss');
+    final date = dateFormat.format(now);
+    final startTime = timeFormat.format(DateFormat('HH:mm').parse(time));
+    final endTime = timeFormat
+        .format(DateFormat('HH:mm').parse(time).add(Duration(hours: 1)));
+
+    return 'https://www.google.com/calendar/render?action=TEMPLATE&text=$description&dates=${date}T$startTime/${date}T$endTime';
   }
 
   // 音声認識の開始
@@ -207,21 +281,10 @@ class _RecognizePageState extends State<RecognizePage> {
                       ],
                     ),
                     child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          Text(
-                            recognizedText,
-                            style: TextStyle(fontSize: 24, color: Colors.white),
-                            textAlign: TextAlign.center,
-                          ),
-                          Text(
-                            summarizedText, // 新しいテキストをここに追加
-                            style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.yellow), // 新しいテキストのスタイルを設定
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                      child: Text(
+                        recognizedText,
+                        style: TextStyle(fontSize: 24, color: Colors.white),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),
@@ -241,7 +304,8 @@ class _RecognizePageState extends State<RecognizePage> {
                       backgroundColor: isRecognizing
                           ? Colors.redAccent
                           : Colors.tealAccent, // より視認性の高い色に変更
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
@@ -327,7 +391,8 @@ class _RecognizePageState extends State<RecognizePage> {
                           SizedBox(height: 30),
                           ListTile(
                             leading: Icon(Icons.mic, color: Colors.cyanAccent),
-                            title: Text('音声認識', style: TextStyle(color: Colors.white)),
+                            title: Text('音声認識',
+                                style: TextStyle(color: Colors.white)),
                             onTap: () {
                               // 現在のページが"音声認識"なので何もせずモーダルを閉じる
                               toggleModal();
@@ -336,7 +401,8 @@ class _RecognizePageState extends State<RecognizePage> {
                           Divider(color: Colors.grey),
                           ListTile(
                             leading: Icon(Icons.task, color: Colors.cyanAccent),
-                            title: Text('課題管理', style: TextStyle(color: Colors.white)),
+                            title: Text('課題管理',
+                                style: TextStyle(color: Colors.white)),
                             onTap: () {
                               // 課題管理画面を追加予定
                               toggleModal();
@@ -344,8 +410,10 @@ class _RecognizePageState extends State<RecognizePage> {
                           ),
                           Divider(color: Colors.grey),
                           ListTile(
-                            leading: Icon(Icons.summarize, color: Colors.cyanAccent),
-                            title: Text('要約一覧', style: TextStyle(color: Colors.white)),
+                            leading:
+                                Icon(Icons.summarize, color: Colors.cyanAccent),
+                            title: Text('要約一覧',
+                                style: TextStyle(color: Colors.white)),
                             onTap: () {
                               // 要約画面を追加予定
                               toggleModal();
@@ -353,8 +421,10 @@ class _RecognizePageState extends State<RecognizePage> {
                           ),
                           Divider(color: Colors.grey),
                           ListTile(
-                            leading: Icon(Icons.settings, color: Colors.cyanAccent),
-                            title: Text('設定', style: TextStyle(color: Colors.white)),
+                            leading:
+                                Icon(Icons.settings, color: Colors.cyanAccent),
+                            title: Text('設定',
+                                style: TextStyle(color: Colors.white)),
                             onTap: () {
                               // 設定画面を追加予定
                               toggleModal();
@@ -373,6 +443,7 @@ class _RecognizePageState extends State<RecognizePage> {
   }
 }
 
-void main() {
+void main() async {
+  await dotenv.load(fileName: ".env"); // .envファイルから環境変数を読み込む
   runApp(SpeechToTextApp());
 }
