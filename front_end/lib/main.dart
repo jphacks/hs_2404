@@ -10,7 +10,7 @@ class SpeechToTextApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '音声認識アプリ',
+      title: 'taskEcho',
       theme: ThemeData(
         brightness: Brightness.dark,
         primarySwatch: Colors.cyan,
@@ -20,7 +20,6 @@ class SpeechToTextApp extends StatelessWidget {
     );
   }
 }
-
 
 class RecognizePage extends StatefulWidget {
   @override
@@ -37,7 +36,116 @@ class _RecognizePageState extends State<RecognizePage> {
   bool showGradient = true; // デフォルトの背景をグラデーションに戻すためのフラグ
   bool isModalVisible = false; // モーダル表示のフラグ
   Color backgroundColor = Colors.indigoAccent; // 点滅中の背景色管理用
-  
+  List<String> keywords = [
+    "重要",
+    "大事",
+    "課題",
+    "提出",
+    "テスト",
+    "レポート",
+    "締め切り",
+    "期限",
+    "動作確認"
+  ];
+
+  //キーワードをapp.pyに送信
+  Future<void> sendKeywords() async {
+    final response = await http.post(
+      Uri.parse('http://localhost:5000/set_keywords'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'keywords': keywords}),
+    );
+
+    if (response.statusCode == 200) {
+      print("キーワードを送信しました");
+    } else {
+      print("キーワードの送信に失敗しました");
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    sendKeywords(); // ウィジェットの初期化時にキーワードを送信
+  }
+
+  // キーワード設定ダイアログを表示する関数
+  void showKeywordSettingDialog(BuildContext context) {
+    final TextEditingController keywordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('キーワードの設定'),
+              content: Container(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // キーワードの一覧を表示
+                    Expanded(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: keywords.length,
+                        itemBuilder: (context, index) {
+                          return ListTile(
+                            title: Text(keywords[index]),
+                            trailing: IconButton(
+                              icon: Icon(Icons.delete, color: Colors.redAccent),
+                              onPressed: () {
+                                setState(() {
+                                  keywords.removeAt(index); // キーワードを削除
+                                });
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    TextField(
+                      controller: keywordController,
+                      decoration: InputDecoration(hintText: "新しいキーワードを入力"),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // ダイアログを閉じる
+                  },
+                  child: Text("キャンセル"),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // 新しいキーワードを追加
+                    setState(() {
+                      if (keywordController.text.isNotEmpty) {
+                        keywords.add(keywordController.text);
+                        keywordController.clear();
+                      }
+                    });
+                  },
+                  child: Text("追加"),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    // キーワードを保存（バックエンドに送信）
+                    await sendKeywords();
+                    Navigator.of(context).pop(); // ダイアログを閉じる
+                  },
+                  child: Text("保存"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   // サーバーからデータを取得する関数
   Future<void> fetchRecognizedText() async {
@@ -60,6 +168,7 @@ class _RecognizePageState extends State<RecognizePage> {
         // 時刻情報を含むか確認し、GoogleカレンダーのURLを生成して開く
         String? eventTime = await extractTime(recognizedText);
         if (eventTime != null) {
+          print("やったー！時刻情報を取得しました: $eventTime");
           String calendarUrl =
               generateGoogleCalendarUrl(eventTime, recognizedText);
           if (await canLaunchUrl(Uri.parse(calendarUrl))) {
@@ -99,7 +208,7 @@ class _RecognizePageState extends State<RecognizePage> {
   // 点滅を停止する
   void stopFlashing() {
     if (flashTimer != null) {
-      flashTimer?.cancel(); // タイマーをキャンセルする
+      flashTimer?.cancel();
       flashTimer = null;
     }
     isFlashing = false;
@@ -124,9 +233,18 @@ class _RecognizePageState extends State<RecognizePage> {
       return null;
     }
 
+    if (text.isEmpty) {
+      //print('sentenceパラメータが空です'); //一旦消しとく。後で戻す
+      return null;
+    }
+
     final url = Uri.parse('https://labs.goo.ne.jp/api/chrono');
     final headers = {'Content-Type': 'application/json'};
-    final body = jsonEncode({'app_id': apiKey, 'sentence': text});
+
+    final body = jsonEncode({
+      'app_id': apiKey,
+      'sentence': text,
+    });
 
     try {
       print('Sending request to $url with body: $body');
@@ -135,7 +253,8 @@ class _RecognizePageState extends State<RecognizePage> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['datetime_list'] != null && data['datetime_list'].isNotEmpty) {
-          final datetime = data['datetime_list'][0]['datetime'];
+          final datetimeList = data['datetime_list'];
+          final datetime = datetimeList.map((item) => item[1]).join(', ');
           print(datetime);
           return datetime;
         } else {
@@ -147,24 +266,22 @@ class _RecognizePageState extends State<RecognizePage> {
       }
     } catch (e) {
       print('エラーが発生しました: $e');
-      setState(() {
-        recognizedText = "データ取得エラー";
-      });
     }
     return null;
   }
 
   // GoogleカレンダーのURLを生成する関数
-  String generateGoogleCalendarUrl(String time, String description) {
-    final now = DateTime.now();
-    final dateFormat = DateFormat('yyyyMMdd');
-    final timeFormat = DateFormat('HHmmss');
-    final date = dateFormat.format(now);
-    final startTime = timeFormat.format(DateFormat('HH:mm').parse(time));
-    final endTime = timeFormat
-        .format(DateFormat('HH:mm').parse(time).add(Duration(hours: 1)));
+  String generateGoogleCalendarUrl(String date, String description) {
+    try {
+      final dateFormat = DateFormat('YYYYMMDD');
+      final parsedDate = DateTime.parse(date);
+      final formattedDate = dateFormat.format(parsedDate);
 
-    return 'https://www.google.com/calendar/render?action=TEMPLATE&text=$description&dates=${date}T$startTime/${date}T$endTime';
+      return 'https://www.google.com/calendar/render?action=TEMPLATE&dates=${formattedDate}/{formattedDate}';
+    } catch (e) {
+      print('日付のフォーマットエラー: $e');
+      return '';
+    }
   }
 
   // 音声認識の開始
@@ -204,6 +321,7 @@ class _RecognizePageState extends State<RecognizePage> {
     setState(() {
       isRecognizing = false;
       recognizedText = "認識結果がここに表示されます";
+      keyword = "授業中";//キーワードを授業中に戻す
     });
 
     // タイマーが設定されていればキャンセル
@@ -336,6 +454,40 @@ class _RecognizePageState extends State<RecognizePage> {
                             : Colors.redAccent,
                       ),
                       textAlign: TextAlign.center,
+                    ),
+                  ),
+                  SizedBox(height: 40),
+                  // キーワード設定ボタンの追加
+                  Container(
+                    padding: EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // キーワード設定画面を表示
+                        showKeywordSettingDialog(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.cyanAccent, // ボタンの背景色
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: Text(
+                        'キーワードを設定',
+                        style: TextStyle(color: Colors.black),
+                      ),
                     ),
                   ),
                 ],
