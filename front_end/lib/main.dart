@@ -5,9 +5,11 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'SummaryPage.dart';
-import 'TaskManagementPage.dart';
-import 'SettingPage.dart';
+import 'package:provider/provider.dart'; // providerをインポート
+import 'pages/summaryPage.dart';
+import 'pages/taskManagementPage.dart';
+import 'pages/settingPage.dart';
+import 'providers/MordalProvider.dart';
 
 class SpeechToTextApp extends StatelessWidget {
   @override
@@ -456,7 +458,17 @@ class _RecognizePageState extends State<RecognizePage> {
   }
 }
 
-void main() async {
+/* void main() async {
   await dotenv.load(fileName: ".env"); // .envファイルから環境変数を読み込む
   runApp(SpeechToTextApp());
+}
+ */
+void main() async{
+  await dotenv.load(fileName: ".env");
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ModalProvider(),
+      child: SpeechToTextApp(),
+    ),
+  );
 }
