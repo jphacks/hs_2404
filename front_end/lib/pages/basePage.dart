@@ -4,6 +4,7 @@ import '../providers/MordalProvider.dart';
 import 'summaryPage.dart';
 import 'taskManagementPage.dart';
 import 'settingPage.dart';
+import 'voiceRecognitionPage.dart';
 
 class BasePage extends StatelessWidget {
   final Widget body;
@@ -89,7 +90,11 @@ class BasePage extends StatelessWidget {
                             title: Text('音声認識',
                                 style: TextStyle(color: Colors.white)),
                             onTap: () {
-                              // "音声認識" ページのため何もせず閉じる
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => VoiceRecognitionPage()),
+                              );
                               context.read<ModalProvider>().toggleModal();
                             },
                           ),
@@ -108,7 +113,6 @@ class BasePage extends StatelessWidget {
                               context.read<ModalProvider>().toggleModal();
                             },
                           ),
-                          // 他のListTileメニュー項目
                           Divider(color: Colors.grey),
                           ListTile(
                             leading: Icon(Icons.task, color: Colors.cyanAccent),
