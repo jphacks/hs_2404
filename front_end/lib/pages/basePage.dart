@@ -17,17 +17,22 @@ class BasePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('taskEcho'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.menu),
-            onPressed: () {
-              context.read<ModalProvider>().toggleModal();
-            },
-          ),
-        ],
       ),
+      //backgroundColor: Color(0xFF0F0F1F),
       body: Stack(
         children: [
+          //body,
+          // 常にグラデーション背景を表示
+          AnimatedContainer(
+            duration: Duration(milliseconds: 500),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.indigoAccent, Colors.deepPurpleAccent],
+              ),
+            ),
+          ),
           body,
           // フローティングアクションボタン
           Positioned(
