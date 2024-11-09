@@ -5,6 +5,9 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'SummaryPage.dart';
+import 'TaskManagementPage.dart';
+import 'SettingPage.dart';
 
 class SpeechToTextApp extends StatelessWidget {
   @override
@@ -21,7 +24,6 @@ class SpeechToTextApp extends StatelessWidget {
   }
 }
 
-
 class RecognizePage extends StatefulWidget {
   @override
   _RecognizePageState createState() => _RecognizePageState();
@@ -37,7 +39,6 @@ class _RecognizePageState extends State<RecognizePage> {
   bool showGradient = true; // デフォルトの背景をグラデーションに戻すためのフラグ
   bool isModalVisible = false; // モーダル表示のフラグ
   Color backgroundColor = Colors.indigoAccent; // 点滅中の背景色管理用
-  
 
   // サーバーからデータを取得する関数
   Future<void> fetchRecognizedText() async {
@@ -400,22 +401,30 @@ class _RecognizePageState extends State<RecognizePage> {
                           ),
                           Divider(color: Colors.grey),
                           ListTile(
-                            leading: Icon(Icons.task, color: Colors.cyanAccent),
-                            title: Text('課題管理',
-                                style: TextStyle(color: Colors.white)),
-                            onTap: () {
-                              // 課題管理画面を追加予定
-                              toggleModal();
-                            },
-                          ),
-                          Divider(color: Colors.grey),
-                          ListTile(
                             leading:
                                 Icon(Icons.summarize, color: Colors.cyanAccent),
                             title: Text('要約一覧',
                                 style: TextStyle(color: Colors.white)),
                             onTap: () {
-                              // 要約画面を追加予定
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => SummaryPage()),
+                              );
+                              toggleModal();
+                            },
+                          ),
+                          Divider(color: Colors.grey),
+                          ListTile(
+                            leading: Icon(Icons.task, color: Colors.cyanAccent),
+                            title: Text('課題管理',
+                                style: TextStyle(color: Colors.white)),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => TaskManagementPage()),
+                              );
                               toggleModal();
                             },
                           ),
@@ -426,7 +435,11 @@ class _RecognizePageState extends State<RecognizePage> {
                             title: Text('設定',
                                 style: TextStyle(color: Colors.white)),
                             onTap: () {
-                              // 設定画面を追加予定
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => SettingPage()),
+                              );
                               toggleModal();
                             },
                           ),
