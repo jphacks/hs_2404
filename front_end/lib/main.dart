@@ -109,6 +109,14 @@ class _RecognizePageState extends State<RecognizePage> {
                       controller: keywordController,
                       decoration: InputDecoration(hintText: "新しいキーワードを入力"),
                     ),
+                    SizedBox(height: 8), // テキストフィールドと注意書きの間にスペースを追加
+                    Align(
+                      alignment: Alignment.centerRight, //右寄せ
+                      child: Text(
+                        "※「保存」を押さなければ変更が反映されません",
+                        style: TextStyle(color: Colors.redAccent, fontSize: 12),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -321,7 +329,7 @@ class _RecognizePageState extends State<RecognizePage> {
     setState(() {
       isRecognizing = false;
       recognizedText = "認識結果がここに表示されます";
-      keyword = "授業中";//キーワードを授業中に戻す
+      keyword = "授業中"; //キーワードを授業中に戻す
     });
 
     // タイマーが設定されていればキャンセル
