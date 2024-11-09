@@ -81,7 +81,7 @@ class _RecognizePageState extends State<RecognizePage> {
             return AlertDialog(
               title: Text('キーワードの設定'),
               content: Container(
-                width: double.maxFinite,
+                width: MediaQuery.of(context).size.width * 0.5,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
