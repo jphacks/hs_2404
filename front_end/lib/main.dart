@@ -28,7 +28,6 @@ class RecognizePage extends StatefulWidget {
 
 class _RecognizePageState extends State<RecognizePage> {
   String recognizedText = "認識結果がここに表示されます";
-  String summarizedText = "要約データがここに表示されます";
   bool isRecognizing = false;
   String keyword = "授業中";
   Timer? timer;
@@ -37,6 +36,124 @@ class _RecognizePageState extends State<RecognizePage> {
   bool showGradient = true; // デフォルトの背景をグラデーションに戻すためのフラグ
   bool isModalVisible = false; // モーダル表示のフラグ
   Color backgroundColor = Colors.indigoAccent; // 点滅中の背景色管理用
+  List<String> keywords = [
+    "重要",
+    "大事",
+    "課題",
+    "提出",
+    "テスト",
+    "レポート",
+    "締め切り",
+    "期限",
+    "動作確認"
+  ];
+
+  //キーワードをapp.pyに送信
+  Future<void> sendKeywords() async {
+    final response = await http.post(
+      Uri.parse('http://localhost:5000/set_keywords'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'keywords': keywords}),
+    );
+
+    if (response.statusCode == 200) {
+      print("キーワードを送信しました");
+    } else {
+      print("キーワードの送信に失敗しました");
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    sendKeywords(); // ウィジェットの初期化時にキーワードを送信
+  }
+
+  // キーワード設定ダイアログを表示する関数
+  void showKeywordSettingDialog(BuildContext context) {
+    final TextEditingController keywordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('キーワードの設定'),
+              content: Container(
+                width: MediaQuery.of(context).size.width * 0.5,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // キーワードの一覧を表示
+                    Expanded(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: keywords.length,
+                        itemBuilder: (context, index) {
+                          return ListTile(
+                            title: Text(keywords[index]),
+                            trailing: IconButton(
+                              icon: Icon(Icons.delete, color: Colors.redAccent),
+                              onPressed: () {
+                                setState(() {
+                                  keywords.removeAt(index); // キーワードを削除
+                                });
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    TextField(
+                      controller: keywordController,
+                      decoration: InputDecoration(hintText: "新しいキーワードを入力"),
+                    ),
+                    SizedBox(height: 8), // テキストフィールドと注意書きの間にスペースを追加
+                    Align(
+                      alignment: Alignment.centerRight, //右寄せ
+                      child: Text(
+                        "※「保存」を押さなければ変更が反映されません",
+                        style: TextStyle(color: Colors.redAccent, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // ダイアログを閉じる
+                  },
+                  child: Text("キャンセル"),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // 新しいキーワードを追加
+                    setState(() {
+                      if (keywordController.text.isNotEmpty) {
+                        keywords.add(keywordController.text);
+                        keywordController.clear();
+                      }
+                    });
+                  },
+                  child: Text("追加"),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    // キーワードを保存（バックエンドに送信）
+                    await sendKeywords();
+                    Navigator.of(context).pop(); // ダイアログを閉じる
+                  },
+                  child: Text("保存"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   // サーバーからデータを取得する関数
   Future<void> fetchRecognizedText() async {
@@ -48,7 +165,6 @@ class _RecognizePageState extends State<RecognizePage> {
         final data = jsonDecode(response.body);
         setState(() {
           recognizedText = data['recognized_text'] ?? "データが空です";
-          summarizedText = data['summarized_text'] ?? "要約データが空です";
           keyword = data['keyword'];
           if (keyword != "授業中") {
             startFlashing(); // 点滅開始
@@ -95,7 +211,6 @@ class _RecognizePageState extends State<RecognizePage> {
         });
       });
     }
-    isFlashing = false;
   }
 
   // 点滅を停止する
@@ -214,6 +329,7 @@ class _RecognizePageState extends State<RecognizePage> {
     setState(() {
       isRecognizing = false;
       recognizedText = "認識結果がここに表示されます";
+      keyword = "授業中"; //キーワードを授業中に戻す
     });
 
     // タイマーが設定されていればキャンセル
@@ -291,21 +407,10 @@ class _RecognizePageState extends State<RecognizePage> {
                       ],
                     ),
                     child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          Text(
-                            recognizedText,
-                            style: TextStyle(fontSize: 24, color: Colors.white),
-                            textAlign: TextAlign.center,
-                          ),
-                          Text(
-                            summarizedText, // 新しいテキストをここに追加
-                            style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.yellow), // 新しいテキストのスタイルを設定
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                      child: Text(
+                        recognizedText,
+                        style: TextStyle(fontSize: 24, color: Colors.white),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),
@@ -357,6 +462,40 @@ class _RecognizePageState extends State<RecognizePage> {
                             : Colors.redAccent,
                       ),
                       textAlign: TextAlign.center,
+                    ),
+                  ),
+                  SizedBox(height: 40),
+                  // キーワード設定ボタンの追加
+                  Container(
+                    padding: EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // キーワード設定画面を表示
+                        showKeywordSettingDialog(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.cyanAccent, // ボタンの背景色
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: Text(
+                        'キーワードを設定',
+                        style: TextStyle(color: Colors.black),
+                      ),
                     ),
                   ),
                 ],

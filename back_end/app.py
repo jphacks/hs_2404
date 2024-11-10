@@ -6,6 +6,7 @@ import json
 from google.cloud import speech
 from google.oauth2 import service_account
 from flask import Flask, jsonify
+from flask import request
 from flask_cors import CORS
 from threading import Thread
 from dotenv import load_dotenv
@@ -102,11 +103,32 @@ def stop_recognition():
     is_recognizing = False
     return jsonify({"message": "音声認識を停止しました"}), 200
 
-# /recognizeエンドポイントを作成
+""" # /recognizeエンドポイントを作成
 @app.route('/recognize', methods=['GET'])
 def get_recognized_text():
     keyword = "授業中"
     keyword_included = ["重要", "大事", "課題", "提出", "テスト", "レポート", "締め切り", "期限"]
+    for k in keyword_included:
+        if k in partial_text[-20:]:
+            keyword = k
+            break
+    return jsonify({'recognized_text': recognized_text, 'keyword': keyword}) """
+
+# グローバル変数としてキーワードのリストを初期化
+keyword_included = ["重要", "大事", "課題", "提出", "テスト", "レポート", "締め切り", "期限"]
+
+# キーワードを設定するエンドポイント
+@app.route('/set_keywords', methods=['POST'])
+def set_keywords():
+    global keyword_included
+    data = request.get_json()
+    keyword_included = data.get('keywords', keyword_included)
+    return jsonify({"message": "キーワードを設定しました"}), 200
+
+# /recognizeエンドポイントを更新
+@app.route('/recognize', methods=['GET'])
+def get_recognized_text():
+    keyword = "授業中"
     for k in keyword_included:
         if k in partial_text[-20:]:
             keyword = k
