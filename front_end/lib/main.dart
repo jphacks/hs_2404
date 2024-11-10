@@ -242,7 +242,7 @@ class _RecognizePageState extends State<RecognizePage> {
     }
 
     if (text.isEmpty) {
-      //print('sentenceパラメータが空です'); //一旦消しとく。後で戻す
+      print('sentenceパラメータが空です');
       return null;
     }
 
