@@ -30,12 +30,19 @@ audio_queue = queue.Queue()
 recognized_text = ""
 partial_text = ""
 is_recognizing = False  # 音声認識の状態を保持する変数
+audio_buffer = bytearray()
+
 
 # 音声をキューに追加するコールバック関数
 def audio_callback(indata, frames, time, status):
-    if status:
-        print(status, file=sys.stderr)
-    audio_queue.put(bytes(indata))
+    global audio_buffer
+    # 音声データをバッファに追加
+    audio_buffer.extend(bytes(indata))
+
+    # バッファが32000バイトに達したらキューに追加（目安1s分）
+    if len(audio_buffer) >= 64000:
+        audio_queue.put(bytes(audio_buffer))
+        audio_buffer.clear()
 
 # Google Speech-to-Textストリーミング認識
 def recognize_audio():
@@ -43,6 +50,9 @@ def recognize_audio():
     global partial_text
     global is_recognizing
     global summary
+
+    compare_text = ["", ""]
+    counter = 0
 
     # ストリーミング認識設定
     config = speech.RecognitionConfig(
@@ -53,7 +63,7 @@ def recognize_audio():
     streaming_config = speech.StreamingRecognitionConfig(config=config, interim_results=True)
 
     # 音声をストリームで送信
-    with sd.RawInputStream(samplerate=16000, blocksize=4000, dtype='int16',
+    with sd.RawInputStream(samplerate=16000, blocksize=16000, dtype='int16',
                            channels=1, callback=audio_callback):
         def requests():
             while is_recognizing:  # is_recognizing が True のときだけデータを送信
@@ -65,16 +75,30 @@ def recognize_audio():
 
         responses = client.streaming_recognize(config=streaming_config, requests=requests())
 
+
         for response in responses:
             for result in response.results:
+                compare_text[0] = result.alternatives[0].transcript
                 if result.is_final:
-                    recognized_text = result.alternatives[0].transcript
+                    recognized_text = compare_text[0]
                     print("認識結果:", recognized_text)
                     summary = summarize_text(recognized_text)
                     print("要約結果:", summary)
+                    counter = 0
                 else:
-                    partial_text = result.alternatives[0].transcript
+                    partial_text = compare_text[0]
                     print("部分的な認識結果:", partial_text)
+                    compare_text[1] = partial_text
+
+                    if compare_text[0] == compare_text[1]:
+                        counter += 1
+                    if counter >= 20:
+                        recognized_text = compare_text[1]
+                        print("認識結果:", recognized_text)
+                        summary = summarize_text(recognized_text)
+                        print("要約結果:", summary)
+                        counter = 0
+
 
 def summarize_text(text):
     prompt = f"次のテキストを要約して結果のみをください.: {text}"
