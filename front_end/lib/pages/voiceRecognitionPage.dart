@@ -151,6 +151,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         final data = jsonDecode(response.body);
         setState(() {
           recognizedText = data['recognized_text'] ?? "データが空です";
+          summarizedText = data['summarized_text'] ?? "要約データが空です";
           keyword = data['keyword'];
           if (keyword != "授業中") {
             startFlashing(); // 点滅開始
