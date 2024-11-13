@@ -56,7 +56,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   void initState() {
     super.initState();
     //デバッグ用に消去。後で復活させる
-    //sendKeywords(); // ウィジェットの初期化時にキーワードを送信
+    sendKeywords(); // ウィジェットの初期化時にキーワードを送信
   }
 
   // キーワード設定ダイアログを表示する関数
@@ -153,19 +153,35 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        final newRecognizedText = data['recognized_text'] ?? "データが空です";
+        final newSummarizedText = data['summarized_text'] ?? "要約データが空です";
+
         setState(() {
-          recognizedTexts[currentIndex] = data['recognized_text'] ?? "データが空です";
-          summarizedTexts[currentIndex] =
-              data['summarized_text'] ?? "要約データが空です";
+          // 最新のデータが前回のデータと異なる場合のみリストに追加
+          if (recognizedTexts.isEmpty ||
+              recognizedTexts.last != newRecognizedText) {
+            recognizedTexts.add(newRecognizedText);
+            if (recognizedTexts.length > 3) {
+              recognizedTexts.removeAt(0);
+            }
+          }
+
+          if (summarizedTexts.isEmpty ||
+              summarizedTexts.last != newSummarizedText) {
+            summarizedTexts.add(newSummarizedText);
+            if (summarizedTexts.length > 3) {
+              summarizedTexts.removeAt(0);
+            }
+          }
+
+          currentIndex = recognizedTexts.length - 1; // 最新のデータのインデックスを更新
+
           keyword = data['keyword'];
           if (keyword != "授業中") {
             startFlashing(); // 点滅開始
           } else {
             stopFlashing(); // 点滅停止
           }
-
-          // インデックスを更新
-          currentIndex = (currentIndex + 1) % recognizedTexts.length;
         });
 
         // 時刻情報を含むか確認し、GoogleカレンダーのURLを生成して開く
@@ -282,7 +298,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   Future<void> startRecording() async {
     setState(() {
       isRecognizing = true;
-      recognizedTexts[currentIndex] = "音声認識中...";
+      //recognizedTexts[currentIndex] = "音声認識中...";
     });
 
     // サーバーの/startエンドポイントにリクエストを送信
@@ -314,7 +330,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   Future<void> stopRecording() async {
     setState(() {
       isRecognizing = false;
-      recognizedTexts[currentIndex] = "認識結果がここに表示されます";
+      //recognizedTexts[currentIndex] = "認識結果がここに表示されます";
     });
 
     // タイマーが設定されていればキャンセル
@@ -341,9 +357,70 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     super.dispose();
   }
 
+  void showSettingsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('設定'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // 設定ダイアログを閉じる
+                    showKeywordSettingDialog(context); // キーワード設定ダイアログを表示
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.cyanAccent, // ボタンの背景色
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: Text(
+                    'キーワードを設定',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+                SizedBox(height: 20),
+                // 他の設定項目を追加
+                ElevatedButton(
+                  onPressed: () {
+                    // 他の設定項目の処理
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.cyanAccent, // ボタンの背景色
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: Text(
+                    '他の設定項目',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // ダイアログを閉じる
+              },
+              child: Text('閉じる'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final double cardHeight = MediaQuery.of(context).size.height / 6; // 画面の高さの1/6
+    final double cardHeight =
+        MediaQuery.of(context).size.height / 6; // 画面の高さの1/6
     return BasePage(
       body: Stack(
         children: [
@@ -511,11 +588,18 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                         ),
                       ],
                     ),
-                    child: ElevatedButton(
+                    child: ElevatedButton.icon(
                       onPressed: () {
-                        // キーワード設定画面を表示
-                        showKeywordSettingDialog(context);
+                        showSettingsDialog(context); // 設定ダイアログを表示
                       },
+                      icon: Icon(
+                        Icons.settings,
+                        color: Colors.black,
+                      ),
+                      label: Text(
+                        '設定',
+                        style: TextStyle(color: Colors.black),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.cyanAccent, // ボタンの背景色
                         padding:
@@ -523,10 +607,6 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
-                      ),
-                      child: Text(
-                        'キーワードを設定',
-                        style: TextStyle(color: Colors.black),
                       ),
                     ),
                   ),
