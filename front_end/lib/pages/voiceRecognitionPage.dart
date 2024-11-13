@@ -14,6 +14,7 @@ class VoiceRecognitionPage extends StatefulWidget {
 
 class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   String recognizedText = "認識結果がここに表示されます";
+  String summarizedText = "要約データがここに表示されます";
   bool isRecognizing = false;
   String keyword = "授業中";
   Timer? timer;
@@ -376,10 +377,21 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                       ],
                     ),
                     child: SingleChildScrollView(
-                      child: Text(
-                        recognizedText,
-                        style: TextStyle(fontSize: 24, color: Colors.white),
-                        textAlign: TextAlign.center,
+                      child: Column(
+                        children: [
+                          Text(
+                            recognizedText,
+                            style: TextStyle(fontSize: 24, color: Colors.white),
+                            textAlign: TextAlign.center,
+                          ),
+                          Text(
+                            summarizedText, // 新しいテキストをここに追加
+                            style: TextStyle(
+                                fontSize: 20,
+                                color: Colors.yellow), // 新しいテキストのスタイルを設定
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
                   ),
