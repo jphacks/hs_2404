@@ -171,8 +171,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         // 時刻情報を含むか確認し、GoogleカレンダーのURLを生成して開く
         String? eventTime = await extractTime(recognizedTexts[currentIndex]);
         if (eventTime != null) {
-          String calendarUrl =
-              generateGoogleCalendarUrl(eventTime, recognizedTexts[currentIndex]);
+          String calendarUrl = generateGoogleCalendarUrl(
+              eventTime, recognizedTexts[currentIndex]);
           if (await canLaunchUrl(Uri.parse(calendarUrl))) {
             await launchUrl(Uri.parse(calendarUrl));
             print('カレンダーURLを開きました。');
@@ -343,6 +343,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final double cardHeight = MediaQuery.of(context).size.height / 6; // 画面の高さの1/6
     return BasePage(
       body: Stack(
         children: [
@@ -369,76 +370,81 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // 認識結果を表示するカード（縦に広く調整）
-                  GestureDetector(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            content: SingleChildScrollView(
-                              child: Column(
-                                children: [
-                                  Text(
-                                    summarizedTexts[currentIndex],
-                                    style: TextStyle(
-                                        fontSize: 20, color: Colors.yellow),
-                                    textAlign: TextAlign.center,
+                  Column(
+                    children: List.generate(summarizedTexts.length, (index) {
+                      return GestureDetector(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                content: SingleChildScrollView(
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        summarizedTexts[index],
+                                        style: TextStyle(
+                                            fontSize: 20, color: Colors.yellow),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      SizedBox(height: 20),
+                                      Text(
+                                        recognizedTexts[index],
+                                        style: TextStyle(
+                                            fontSize: 24, color: Colors.white),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      SizedBox(height: 20),
+                                    ],
                                   ),
-                                  SizedBox(height: 20),
-                                  Text(
-                                    recognizedTexts[currentIndex],
-                                    style: TextStyle(
-                                        fontSize: 24, color: Colors.white),
-                                    textAlign: TextAlign.center,
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text('閉じる'),
                                   ),
                                 ],
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: Text('閉じる'),
-                              ),
-                            ],
+                              );
+                            },
                           );
                         },
-                      );
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      height: 200, // 縦に広く調整
-                      padding: EdgeInsets.all(20.0),
-                      margin: EdgeInsets.symmetric(vertical: 20.0),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 10,
-                            offset: Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            Text(
-                              summarizedTexts[currentIndex],
-                              style: TextStyle(
-                                fontSize: 24,
-                                color: (keyword == "授業中")
-                                    ? Colors.white
-                                    : Colors.redAccent,
+                        child: Container(
+                          width: double.infinity,
+                          height: cardHeight,
+                          padding: EdgeInsets.all(20.0),
+                          margin: EdgeInsets.symmetric(vertical: 20.0),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 10,
+                                offset: Offset(0, 5),
                               ),
-                              textAlign: TextAlign.center,
+                            ],
+                          ),
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                Text(
+                                  summarizedTexts[index],
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    color: (keyword == "授業中")
+                                        ? Colors.white
+                                        : Colors.redAccent,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    }),
                   ),
                   SizedBox(height: 20),
                   // 録音開始/停止ボタン（色と視認性の改善）
