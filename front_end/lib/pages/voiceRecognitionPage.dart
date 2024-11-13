@@ -13,8 +13,10 @@ class VoiceRecognitionPage extends StatefulWidget {
 }
 
 class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
-  String recognizedText = "認識結果がここに表示されます";
-  String summarizedText = "要約データがここに表示されます";
+  //String recognizedText = "認識結果がここに表示されます";
+  //String summarizedText = "要約データがここに表示されます";
+  List<String> recognizedTexts = ["認識結果1", "認識結果2", "認識結果3"];
+  List<String> summarizedTexts = ["要約1", "要約2", "要約3"];
   bool isRecognizing = false;
   String keyword = "授業中";
   Timer? timer;
@@ -33,6 +35,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     "期限",
     "動作確認"
   ];
+  int currentIndex = 0; //要約とかの文章を受け取るリストのインデックスを管理する変数
 
   //キーワードをapp.pyに送信
   Future<void> sendKeywords() async {
@@ -52,7 +55,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   @override
   void initState() {
     super.initState();
-    sendKeywords(); // ウィジェットの初期化時にキーワードを送信
+    //デバッグ用に消去。後で復活させる
+    //sendKeywords(); // ウィジェットの初期化時にキーワードを送信
   }
 
   // キーワード設定ダイアログを表示する関数
@@ -150,21 +154,25 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          recognizedText = data['recognized_text'] ?? "データが空です";
-          summarizedText = data['summarized_text'] ?? "要約データが空です";
+          recognizedTexts[currentIndex] = data['recognized_text'] ?? "データが空です";
+          summarizedTexts[currentIndex] =
+              data['summarized_text'] ?? "要約データが空です";
           keyword = data['keyword'];
           if (keyword != "授業中") {
             startFlashing(); // 点滅開始
           } else {
             stopFlashing(); // 点滅停止
           }
+
+          // インデックスを更新
+          currentIndex = (currentIndex + 1) % recognizedTexts.length;
         });
 
         // 時刻情報を含むか確認し、GoogleカレンダーのURLを生成して開く
-        String? eventTime = await extractTime(recognizedText);
+        String? eventTime = await extractTime(recognizedTexts[currentIndex]);
         if (eventTime != null) {
           String calendarUrl =
-              generateGoogleCalendarUrl(eventTime, recognizedText);
+              generateGoogleCalendarUrl(eventTime, recognizedTexts[currentIndex]);
           if (await canLaunchUrl(Uri.parse(calendarUrl))) {
             await launchUrl(Uri.parse(calendarUrl));
             print('カレンダーURLを開きました。');
@@ -178,7 +186,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     } catch (e) {
       print('エラーが発生しました: $e');
       setState(() {
-        recognizedText = "データ取得エラー";
+        recognizedTexts[currentIndex] = "データ取得エラー";
       });
     }
   }
@@ -251,7 +259,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     } catch (e) {
       print('エラーが発生しました: $e');
       setState(() {
-        recognizedText = "データ取得エラー";
+        recognizedTexts[currentIndex] = "データ取得エラー";
       });
     }
     return null;
@@ -274,7 +282,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   Future<void> startRecording() async {
     setState(() {
       isRecognizing = true;
-      recognizedText = "音声認識中...";
+      recognizedTexts[currentIndex] = "音声認識中...";
     });
 
     // サーバーの/startエンドポイントにリクエストを送信
@@ -297,7 +305,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     } catch (e) {
       print('エラーが発生しました: $e');
       setState(() {
-        recognizedText = "音声認識開始エラー";
+        recognizedTexts[currentIndex] = "音声認識開始エラー";
       });
     }
   }
@@ -306,7 +314,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   Future<void> stopRecording() async {
     setState(() {
       isRecognizing = false;
-      recognizedText = "認識結果がここに表示されます";
+      recognizedTexts[currentIndex] = "認識結果がここに表示されます";
     });
 
     // タイマーが設定されていればキャンセル
@@ -361,38 +369,74 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // 認識結果を表示するカード（縦に広く調整）
-                  Container(
-                    width: double.infinity,
-                    height: 200, // 縦に広く調整
-                    padding: EdgeInsets.all(20.0),
-                    margin: EdgeInsets.symmetric(vertical: 20.0),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          Text(
-                            recognizedText,
-                            style: TextStyle(fontSize: 24, color: Colors.white),
-                            textAlign: TextAlign.center,
-                          ),
-                          Text(
-                            summarizedText, // 新しいテキストをここに追加
-                            style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.yellow), // 新しいテキストのスタイルを設定
-                            textAlign: TextAlign.center,
+                  GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            content: SingleChildScrollView(
+                              child: Column(
+                                children: [
+                                  Text(
+                                    summarizedTexts[currentIndex],
+                                    style: TextStyle(
+                                        fontSize: 20, color: Colors.yellow),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  SizedBox(height: 20),
+                                  Text(
+                                    recognizedTexts[currentIndex],
+                                    style: TextStyle(
+                                        fontSize: 24, color: Colors.white),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: Text('閉じる'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 200, // 縦に広く調整
+                      padding: EdgeInsets.all(20.0),
+                      margin: EdgeInsets.symmetric(vertical: 20.0),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 10,
+                            offset: Offset(0, 5),
                           ),
                         ],
+                      ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            Text(
+                              summarizedTexts[currentIndex],
+                              style: TextStyle(
+                                fontSize: 24,
+                                color: (keyword == "授業中")
+                                    ? Colors.white
+                                    : Colors.redAccent,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
