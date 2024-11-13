@@ -1,5 +1,5 @@
 import sounddevice as sd
-import queue
+import queue, time
 import sys
 import os
 import json
@@ -31,18 +31,24 @@ recognized_text = ""
 partial_text = ""
 is_recognizing = False  # 音声認識の状態を保持する変数
 audio_buffer = bytearray()
+c_jud = True
 
-
-# 音声をキューに追加するコールバック関数
 def audio_callback(indata, frames, time, status):
-    global audio_buffer
-    # 音声データをバッファに追加
-    audio_buffer.extend(bytes(indata))
+    global audio_buffer, c_jud, audio_queue
 
-    # バッファが32000バイトに達したらキューに追加（目安1s分）
-    if len(audio_buffer) >= 64000:
-        audio_queue.put(bytes(audio_buffer))
-        audio_buffer.clear()
+    if not c_jud:
+        audio_buffer.clear()  # バッファをクリア
+        audio_queue.queue.clear() # キューもクリア
+    else:
+        # 音声データをバッファに追加
+        audio_buffer.extend(bytes(indata))
+
+    # 音声データを一定の間隔で送信
+    if len(audio_buffer) >= 1600:  # 少し小さめの単位でデータを送信
+        with audio_queue.mutex:
+            audio_queue.put(bytes(audio_buffer))
+        audio_buffer.clear()  # データ送信後にバッファをクリア
+    
 
 # Google Speech-to-Textストリーミング認識
 def recognize_audio():
@@ -50,9 +56,7 @@ def recognize_audio():
     global partial_text
     global is_recognizing
     global summary
-
-    compare_text = ["", ""]
-    counter = 0
+    global c_jud, audio_buffer, audio_queue
 
     # ストリーミング認識設定
     config = speech.RecognitionConfig(
@@ -65,6 +69,7 @@ def recognize_audio():
     # 音声をストリームで送信
     with sd.RawInputStream(samplerate=16000, blocksize=16000, dtype='int16',
                            channels=1, callback=audio_callback):
+        
         def requests():
             while is_recognizing:  # is_recognizing が True のときだけデータを送信
                 data = audio_queue.get()
@@ -75,36 +80,33 @@ def recognize_audio():
 
         responses = client.streaming_recognize(config=streaming_config, requests=requests())
 
+        # 認識タイムアウト設定
+        timeout = 5
+        start_time = time.time()  # 認識開始時に1回だけスタートタイムをリセット
 
         for response in responses:
             for result in response.results:
-                compare_text[0] = result.alternatives[0].transcript
-                if result.is_final:
-                    recognized_text = compare_text[0]
+                current_text = result.alternatives[0].transcript.strip()  # 認識されたテキスト
+
+                if (time.time() - start_time > timeout) or result.is_final:#timeoutより長くなっても認識結果とする
+                    # 最終結果の場合
+                    recognized_text = current_text  # 最終結果を更新
                     print("認識結果:", recognized_text)
-                    summary = summarize_text(recognized_text)
-                    print("要約結果:", summary)
-                    counter = 0
+                    current_text = ""  # 次回認識のためにcurrent_textをリセット
+
+                    # 音声認識タイムアウト後、音声データをリセット
+                    if not c_jud:  # 停止している状態なら再度開始
+                        c_jud = True
+                        audio_buffer.clear()  # バッファのクリア
+                        print("音声データをリセットして再開")
+
+                    start_time = time.time()  # 新たに認識開始の時間をリセット
+
                 else:
-                    partial_text = compare_text[0]
+                    # 部分的な認識結果を処理
+                    partial_text = current_text
                     print("部分的な認識結果:", partial_text)
-                    compare_text[1] = partial_text
 
-                    if compare_text[0] == compare_text[1]:
-                        counter += 1
-                    if counter >= 20:
-                        recognized_text = compare_text[1]
-                        print("認識結果:", recognized_text)
-                        summary = summarize_text(recognized_text)
-                        print("要約結果:", summary)
-                        counter = 0
-
-
-def summarize_text(text):
-    prompt = f"次のテキストを要約して結果のみをください.: {text}"
-    gemini_pro = genai.GenerativeModel("gemini-pro")
-    response = gemini_pro.generate_content(prompt)
-    return response.text
 
 # 音声認識を開始するエンドポイント
 @app.route('/start', methods=['POST'])
