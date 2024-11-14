@@ -428,45 +428,78 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('授業の設定'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: classController,
-                decoration: InputDecoration(hintText: "新しい授業を入力"),
-              ),
-              SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  "※「追加」を押さなければ変更が反映されません",
-                  style: TextStyle(color: Colors.redAccent, fontSize: 12),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('授業の設定'),
+              content: Container(
+                height: MediaQuery.of(context).size.height * 0.6, // ダイアログの高さを指定
+                width: MediaQuery.of(context).size.width * 0.6,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    //授業の削除
+                    SizedBox(height: 8),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: classProvider.classes.map((className) {
+                            return ListTile(
+                              title: Text(className),
+                              trailing: PopupMenuButton<String>(
+                                onSelected: (String result) {
+                                  if (result == '削除') {
+                                    setState(() {
+                                      classProvider.removeClass(className);
+                                    });
+                                  }
+                                },
+                                itemBuilder: (BuildContext context) =>
+                                    <PopupMenuEntry<String>>[
+                                  PopupMenuItem<String>(
+                                    value: '削除',
+                                    child: Text('削除'),
+                                    enabled: classProvider.selectedClass !=
+                                        className,
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                    //授業の追加
+                    SizedBox(height: 16),
+                    TextField(
+                      controller: classController,
+                      decoration: InputDecoration(hintText: "新しい授業を入力"),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text("キャンセル"),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  if (classController.text.isNotEmpty) {
-                    classProvider.classes.add(classController.text);
-                    classController.clear();
-                  }
-                });
-                Navigator.of(context).pop();
-              },
-              child: Text("追加"),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("キャンセル"),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      if (classController.text.isNotEmpty) {
+                        classProvider.addClass(classController.text);
+                        classController.clear();
+                      }
+                    });
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("追加"),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -631,18 +664,20 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                   ),
                   SizedBox(height: 20),
                   DropdownButton<String>(
-                    hint: Text("授業を選択"),//これが表示されることはない。デフォルトでプログラミングの授業が選択される
+                    hint: Text("授業を選択"),
                     value: context.watch<ClassProvider>().selectedClass,
                     onChanged: (String? newValue) {
                       if (newValue != null) {
                         setState(() {
-                          context.read<ClassProvider>().setSelectedClass(newValue);
-                          print("選択された授業: $selectedClass");
+                          context
+                              .read<ClassProvider>()
+                              .setSelectedClass(newValue);
+                          print("選択された授業: ${context.read<ClassProvider>().selectedClass}");
                         });
                       }
                     },
-                    items:
-                        classProvider.classes.map<DropdownMenuItem<String>>((String value) {
+                    items: classProvider.classes
+                        .map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
                         child: Text(value),
