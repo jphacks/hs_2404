@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart'; // providerをインポート
 import 'providers/MordalProvider.dart';
 import 'providers/classProvider.dart';
+import 'providers/textsDataProvider.dart';
 
 class SpeechToTextApp extends StatelessWidget {
   @override
@@ -28,6 +29,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => ClassProvider()),
         ChangeNotifierProvider(create: (context) => ModalProvider()),
+        ChangeNotifierProvider(create: (_) => TextsDataProvider()),
       ],
       child: SpeechToTextApp(),
     ),

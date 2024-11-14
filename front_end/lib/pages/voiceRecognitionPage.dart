@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import '../providers/classProvider.dart';
+import '../providers/textsDataProvider.dart';
 
 class VoiceRecognitionPage extends StatefulWidget {
   @override
@@ -38,8 +39,6 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     "動作確認"
   ];
   int currentIndex = 0; //要約とかの文章を受け取るリストのインデックスを管理する変数
-  //List<String> classes = ["プログラミングの授業"];
-  String selectedClass = "プログラミングの授業";
   TextEditingController classController = TextEditingController();
 
   //キーワードをapp.pyに送信
@@ -60,12 +59,15 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   @override
   void initState() {
     super.initState();
-    //デバッグ用に消去。後で復活させる
+    //↓デバッグ用にコメントアウト。後で復活させる
     //sendKeywords(); // ウィジェットの初期化時にキーワードを送信
   }
 
   // サーバーからデータを取得する関数
   Future<void> fetchRecognizedText() async {
+    final textsDataProvider = Provider.of<TextsDataProvider>(context, listen: false);
+    final selectedClass = Provider.of<ClassProvider>(context, listen: false).selectedClass;
+
     try {
       final response =
           await http.get(Uri.parse('http://localhost:5000/recognize'));
@@ -79,7 +81,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
           // 最新のデータが前回のデータと異なる場合のみリストに追加
           if (recognizedTexts.isEmpty ||
               recognizedTexts.last != newRecognizedText) {
-            recognizedTexts.add(newRecognizedText);
+            recognizedTexts.add(newRecognizedText);//こっちはここでの表示用
+            textsDataProvider.addRecognizedText(selectedClass, newRecognizedText);//保存用
             if (recognizedTexts.length > 3) {
               recognizedTexts.removeAt(0);
             }
@@ -87,11 +90,15 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
           if (summarizedTexts.isEmpty ||
               summarizedTexts.last != newSummarizedText) {
-            summarizedTexts.add(newSummarizedText);
+            summarizedTexts.add(newSummarizedText);//こっちはここでの表示用
+            textsDataProvider.addSummarizedText(selectedClass, newSummarizedText);//保存用
             if (summarizedTexts.length > 3) {
               summarizedTexts.removeAt(0);
             }
           }
+
+          print(textsDataProvider.getRecognizedTexts(selectedClass));
+          print(textsDataProvider.getSummarizedTexts(selectedClass));
 
           currentIndex = recognizedTexts.length - 1; // 最新のデータのインデックスを更新
 
