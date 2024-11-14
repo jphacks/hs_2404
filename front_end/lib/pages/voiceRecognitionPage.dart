@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
+import '../providers/classProvider.dart';
 
 class VoiceRecognitionPage extends StatefulWidget {
   @override
@@ -36,7 +38,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     "動作確認"
   ];
   int currentIndex = 0; //要約とかの文章を受け取るリストのインデックスを管理する変数
-  List<String> classes = ["プログラミングの授業"];
+  //List<String> classes = ["プログラミングの授業"];
   String selectedClass = "プログラミングの授業";
   TextEditingController classController = TextEditingController();
 
@@ -422,6 +424,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
   // 授業設定ダイアログを表示する関数
   void showClassSettingDialog(BuildContext context) {
+    final classProvider = Provider.of<ClassProvider>(context, listen: false);
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -455,7 +458,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
               onPressed: () {
                 setState(() {
                   if (classController.text.isNotEmpty) {
-                    classes.add(classController.text);
+                    classProvider.classes.add(classController.text);
                     classController.clear();
                   }
                 });
@@ -473,6 +476,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   Widget build(BuildContext context) {
     final double cardHeight =
         MediaQuery.of(context).size.height / 6; // 画面の高さの1/6
+    final classProvider = Provider.of<ClassProvider>(context);
     return BasePage(
       body: Stack(
         children: [
@@ -628,17 +632,17 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                   SizedBox(height: 20),
                   DropdownButton<String>(
                     hint: Text("授業を選択"),//これが表示されることはない。デフォルトでプログラミングの授業が選択される
-                    value: selectedClass,
+                    value: context.watch<ClassProvider>().selectedClass,
                     onChanged: (String? newValue) {
                       if (newValue != null) {
                         setState(() {
-                          selectedClass = newValue;
+                          context.read<ClassProvider>().setSelectedClass(newValue);
                           print("選択された授業: $selectedClass");
                         });
                       }
                     },
                     items:
-                        classes.map<DropdownMenuItem<String>>((String value) {
+                        classProvider.classes.map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
                         child: Text(value),

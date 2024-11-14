@@ -3,6 +3,7 @@ import 'package:flutter_speech_to_text/pages/voiceRecognitionPage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart'; // providerをインポート
 import 'providers/MordalProvider.dart';
+import 'providers/classProvider.dart';
 
 class SpeechToTextApp extends StatelessWidget {
   @override
@@ -19,14 +20,16 @@ class SpeechToTextApp extends StatelessWidget {
   }
 }
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Flutter のバインディングを初期化
   await dotenv.load(fileName: ".env");
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => ModalProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ClassProvider()),
+        ChangeNotifierProvider(create: (context) => ModalProvider()),
+      ],
       child: SpeechToTextApp(),
     ),
   );
 }
-
