@@ -59,14 +59,15 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   @override
   void initState() {
     super.initState();
-    //↓デバッグ用にコメントアウト。後で復活させる
-    //sendKeywords(); // ウィジェットの初期化時にキーワードを送信
+    sendKeywords(); // ウィジェットの初期化時にキーワードを送信
   }
 
   // サーバーからデータを取得する関数
   Future<void> fetchRecognizedText() async {
-    final textsDataProvider = Provider.of<TextsDataProvider>(context, listen: false);
-    final selectedClass = Provider.of<ClassProvider>(context, listen: false).selectedClass;
+    final textsDataProvider =
+        Provider.of<TextsDataProvider>(context, listen: false);
+    final selectedClass =
+        Provider.of<ClassProvider>(context, listen: false).selectedClass;
 
     try {
       final response =
@@ -79,26 +80,23 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
         setState(() {
           // 最新のデータが前回のデータと異なる場合のみリストに追加
-          if (recognizedTexts.isEmpty ||
-              recognizedTexts.last != newRecognizedText) {
-            recognizedTexts.add(newRecognizedText);//こっちはここでの表示用
-            textsDataProvider.addRecognizedText(selectedClass, newRecognizedText);//保存用
+          if ((recognizedTexts.isEmpty ||
+                  recognizedTexts.last != newRecognizedText) &&
+              (summarizedTexts.isEmpty ||
+                  summarizedTexts.last != newSummarizedText)) {
+            recognizedTexts.add(newRecognizedText); //こっちはここでの表示用
+            summarizedTexts.add(newSummarizedText);
+
+            textsDataProvider.addRecognizedText(
+                selectedClass, newRecognizedText); //保存用
+            textsDataProvider.addSummarizedText(
+                selectedClass, newSummarizedText);
+
             if (recognizedTexts.length > 3) {
               recognizedTexts.removeAt(0);
-            }
-          }
-
-          if (summarizedTexts.isEmpty ||
-              summarizedTexts.last != newSummarizedText) {
-            summarizedTexts.add(newSummarizedText);//こっちはここでの表示用
-            textsDataProvider.addSummarizedText(selectedClass, newSummarizedText);//保存用
-            if (summarizedTexts.length > 3) {
               summarizedTexts.removeAt(0);
             }
           }
-
-          print(textsDataProvider.getRecognizedTexts(selectedClass));
-          print(textsDataProvider.getSummarizedTexts(selectedClass));
 
           currentIndex = recognizedTexts.length - 1; // 最新のデータのインデックスを更新
 
@@ -224,7 +222,6 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   Future<void> startRecording() async {
     setState(() {
       isRecognizing = true;
-      //recognizedTexts[currentIndex] = "音声認識中...";
     });
 
     // サーバーの/startエンドポイントにリクエストを送信
@@ -256,7 +253,6 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   Future<void> stopRecording() async {
     setState(() {
       isRecognizing = false;
-      //recognizedTexts[currentIndex] = "認識結果がここに表示されます";
     });
 
     // タイマーが設定されていればキャンセル
@@ -679,7 +675,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                           context
                               .read<ClassProvider>()
                               .setSelectedClass(newValue);
-                          print("選択された授業: ${context.read<ClassProvider>().selectedClass}");
+                          print(
+                              "選択された授業: ${context.read<ClassProvider>().selectedClass}");
                         });
                       }
                     },

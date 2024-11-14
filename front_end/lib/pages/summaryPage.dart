@@ -7,7 +7,6 @@ import 'classDetailPage.dart';
 class SummaryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    //String selectedClass = context.watch<ClassProvider>().selectedClass;
     List<String> classes = context.watch<ClassProvider>().classes;
 
     return BasePage(
@@ -31,7 +30,7 @@ class SummaryPage extends StatelessWidget {
                 height: MediaQuery.of(context).size.height / 6,
                 child: Card(
                   child: Center(
-                    child: Text(classes[index]),
+                    child: Text(classes[index], style: TextStyle(fontSize: 24)),
                   ),
                 ),
               ),
