@@ -6,7 +6,15 @@ class SummaryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BasePage(
       body: Center(
-        child: Text('要約一覧の内容がここに表示されます'),
+        child: Container(
+          width: double.infinity,
+          height: MediaQuery.of(context).size.height / 6,
+          child: Card(
+            child: Center(
+              child: Text('授業名'),
+            ),
+          ),
+        ),
       ),
     );
   }

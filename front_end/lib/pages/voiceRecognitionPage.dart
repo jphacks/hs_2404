@@ -36,6 +36,9 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     "動作確認"
   ];
   int currentIndex = 0; //要約とかの文章を受け取るリストのインデックスを管理する変数
+  List<String> classes = ["プログラミングの授業"];
+  String selectedClass = "プログラミングの授業";
+  TextEditingController classController = TextEditingController();
 
   //キーワードをapp.pyに送信
   Future<void> sendKeywords() async {
@@ -56,93 +59,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   void initState() {
     super.initState();
     //デバッグ用に消去。後で復活させる
-    sendKeywords(); // ウィジェットの初期化時にキーワードを送信
-  }
-
-  // キーワード設定ダイアログを表示する関数
-  void showKeywordSettingDialog(BuildContext context) {
-    final TextEditingController keywordController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text('キーワードの設定'),
-              content: Container(
-                width: MediaQuery.of(context).size.width * 0.5,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // キーワードの一覧を表示
-                    Expanded(
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: keywords.length,
-                        itemBuilder: (context, index) {
-                          return ListTile(
-                            title: Text(keywords[index]),
-                            trailing: IconButton(
-                              icon: Icon(Icons.delete, color: Colors.redAccent),
-                              onPressed: () {
-                                setState(() {
-                                  keywords.removeAt(index); // キーワードを削除
-                                });
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    TextField(
-                      controller: keywordController,
-                      decoration: InputDecoration(hintText: "新しいキーワードを入力"),
-                    ),
-                    SizedBox(height: 8), // テキストフィールドと注意書きの間にスペースを追加
-                    Align(
-                      alignment: Alignment.centerRight, //右寄せ
-                      child: Text(
-                        "※「保存」を押さなければ変更が反映されません",
-                        style: TextStyle(color: Colors.redAccent, fontSize: 12),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // ダイアログを閉じる
-                  },
-                  child: Text("キャンセル"),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // 新しいキーワードを追加
-                    setState(() {
-                      if (keywordController.text.isNotEmpty) {
-                        keywords.add(keywordController.text);
-                        keywordController.clear();
-                      }
-                    });
-                  },
-                  child: Text("追加"),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    // キーワードを保存（バックエンドに送信）
-                    await sendKeywords();
-                    Navigator.of(context).pop(); // ダイアログを閉じる
-                  },
-                  child: Text("保存"),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+    //sendKeywords(); // ウィジェットの初期化時にキーワードを送信
   }
 
   // サーバーからデータを取得する関数
@@ -384,10 +301,10 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                   ),
                 ),
                 SizedBox(height: 20),
-                // 他の設定項目を追加
                 ElevatedButton(
                   onPressed: () {
-                    // 他の設定項目の処理
+                    Navigator.of(context).pop(); // 設定ダイアログを閉じる
+                    showClassSettingDialog(context); // 授業設定ダイアログを表示
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.cyanAccent, // ボタンの背景色
@@ -397,7 +314,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                     ),
                   ),
                   child: Text(
-                    '他の設定項目',
+                    '授業の設定',
                     style: TextStyle(color: Colors.black),
                   ),
                 ),
@@ -410,6 +327,141 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                 Navigator.of(context).pop(); // ダイアログを閉じる
               },
               child: Text('閉じる'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // キーワード設定ダイアログを表示する関数
+  void showKeywordSettingDialog(BuildContext context) {
+    final TextEditingController keywordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('キーワードの設定'),
+              content: Container(
+                width: MediaQuery.of(context).size.width * 0.5,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // キーワードの一覧を表示
+                    Expanded(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: keywords.length,
+                        itemBuilder: (context, index) {
+                          return ListTile(
+                            title: Text(keywords[index]),
+                            trailing: IconButton(
+                              icon: Icon(Icons.delete, color: Colors.redAccent),
+                              onPressed: () {
+                                setState(() {
+                                  keywords.removeAt(index); // キーワードを削除
+                                });
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    TextField(
+                      controller: keywordController,
+                      decoration: InputDecoration(hintText: "新しいキーワードを入力"),
+                    ),
+                    SizedBox(height: 8), // テキストフィールドと注意書きの間にスペースを追加
+                    Align(
+                      alignment: Alignment.centerRight, //右寄せ
+                      child: Text(
+                        "※「保存」を押さなければ変更が反映されません",
+                        style: TextStyle(color: Colors.redAccent, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // ダイアログを閉じる
+                  },
+                  child: Text("キャンセル"),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // 新しいキーワードを追加
+                    setState(() {
+                      if (keywordController.text.isNotEmpty) {
+                        keywords.add(keywordController.text);
+                        keywordController.clear();
+                      }
+                    });
+                  },
+                  child: Text("追加"),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    // キーワードを保存（バックエンドに送信）
+                    await sendKeywords();
+                    Navigator.of(context).pop(); // ダイアログを閉じる
+                  },
+                  child: Text("保存"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // 授業設定ダイアログを表示する関数
+  void showClassSettingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('授業の設定'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: classController,
+                decoration: InputDecoration(hintText: "新しい授業を入力"),
+              ),
+              SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  "※「追加」を押さなければ変更が反映されません",
+                  style: TextStyle(color: Colors.redAccent, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("キャンセル"),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  if (classController.text.isNotEmpty) {
+                    classes.add(classController.text);
+                    classController.clear();
+                  }
+                });
+                Navigator.of(context).pop();
+              },
+              child: Text("追加"),
             ),
           ],
         );
@@ -573,40 +625,43 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  SizedBox(height: 40),
-                  // キーワード設定ボタンの追加
-                  Container(
-                    padding: EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton.icon(
+                  SizedBox(height: 20),
+                  DropdownButton<String>(
+                    hint: Text("授業を選択"),//これが表示されることはない。デフォルトでプログラミングの授業が選択される
+                    value: selectedClass,
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          selectedClass = newValue;
+                          print("選択された授業: $selectedClass");
+                        });
+                      }
+                    },
+                    items:
+                        classes.map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                  SizedBox(height: 20),
+                  // 設定ボタンの追加
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: ElevatedButton(
                       onPressed: () {
                         showSettingsDialog(context); // 設定ダイアログを表示
                       },
-                      icon: Icon(
-                        Icons.settings,
-                        color: Colors.black,
-                      ),
-                      label: Text(
-                        '設定',
-                        style: TextStyle(color: Colors.black),
-                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.cyanAccent, // ボタンの背景色
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
+                        padding: EdgeInsets.all(16), // アイコンの周りのパディング
+                        shape: CircleBorder(), // ボタンを円形にする
+                        elevation: 0, // 影を削除
+                      ),
+                      child: Icon(
+                        Icons.settings,
+                        color: Colors.black,
                       ),
                     ),
                   ),
