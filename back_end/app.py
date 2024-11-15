@@ -51,7 +51,6 @@ def recognize_audio():
     global recognized_text
     global partial_text
     global is_recognizing
-    global summary
     global c_jud, audio_buffer, audio_queue
 
     # ストリーミング認識設定
@@ -89,9 +88,7 @@ def recognize_audio():
                     recognized_text = current_text  # 最終結果を更新
                     print("認識結果:", recognized_text)
                     current_text = ""  # 次回認識のためにcurrent_textをリセット
-                    #c_jud = False
-                    #audio_queue = queue.Queue()
-
+                  
                     start_time = time.time()  # 新たに認識開始の時間をリセット
 
                 else:
@@ -142,6 +139,12 @@ def set_keywords():
     keyword_included = data.get('keywords', keyword_included)
     return jsonify({"message": "キーワードを設定しました"}), 200
 
+def summarize(text):
+    prompt = f"次のテキストを要約して結果のみをください.: {text}"
+    gemini_pro = genai.GenerativeModel("gemini-pro")
+    response = gemini_pro.generate_content(prompt)
+    return response.text
+
 # /recognizeエンドポイントを更新
 @app.route('/recognize', methods=['GET'])
 def get_recognized_text():
@@ -150,6 +153,10 @@ def get_recognized_text():
         if k in partial_text[-20:]:
             keyword = k
             break
+    if recognized_text != "":
+        summary = summarize(recognized_text)
+    else:
+        summary = summarize(partial_text)
     return jsonify({'recognized_text': recognized_text, 'keyword': keyword, 'summarized_text': summary})
 
 # Flaskサーバーの実行
