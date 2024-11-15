@@ -133,7 +133,7 @@ def get_recognized_text():
         if k in partial_text[-20:]:
             keyword = k
             break
-    return jsonify({'recognized_text': recognized_text, 'keyword': keyword})
+    return jsonify({'recognized_text': recognized_text, 'keyword': keyword, 'summarized_text': summary})
 
 # Flaskサーバーの実行
 if __name__ == '__main__':
