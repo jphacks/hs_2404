@@ -5,6 +5,7 @@ import 'summaryPage.dart';
 import 'taskManagementPage.dart';
 import 'settingPage.dart';
 import 'voiceRecognitionPage.dart';
+import '../providers/recognitionProvider.dart';
 
 class BasePage extends StatelessWidget {
   final Widget body;
@@ -14,6 +15,7 @@ class BasePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     bool isModalVisible = context.watch<ModalProvider>().isModalVisible;
+    final recognitionProvider = Provider.of<RecognitionProvider>(context);
 
     return Scaffold(
       /* appBar: AppBar(
@@ -41,7 +43,26 @@ class BasePage extends StatelessWidget {
             right: 30,
             child: FloatingActionButton(
               onPressed: () {
-                context.read<ModalProvider>().toggleModal();
+                if (recognitionProvider.isRecognizing) {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        content: Text('ページを移動する際は\n録音を停止してください', style: TextStyle(fontSize: 20, color: Colors.redAccent), textAlign: TextAlign.center),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: Text('閉じる'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                } else {
+                  context.read<ModalProvider>().toggleModal();
+                }
               },
               backgroundColor: Colors.cyanAccent,
               child: Icon(
@@ -93,7 +114,8 @@ class BasePage extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => VoiceRecognitionPage()),
+                                    builder: (context) =>
+                                        VoiceRecognitionPage()),
                               );
                               context.read<ModalProvider>().toggleModal();
                             },
