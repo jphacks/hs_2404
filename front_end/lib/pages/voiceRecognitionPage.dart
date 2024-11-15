@@ -9,6 +9,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import '../providers/classProvider.dart';
 import '../providers/textsDataProvider.dart';
+import '../providers/recognitionProvider.dart';
 
 class VoiceRecognitionPage extends StatefulWidget {
   @override
@@ -20,7 +21,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   //String summarizedText = "要約データがここに表示されます";
   List<String> recognizedTexts = ["認識結果1", "認識結果2", "認識結果3"];
   List<String> summarizedTexts = ["要約1", "要約2", "要約3"];
-  bool isRecognizing = false;
+  //bool isRecognizing = false;
   String keyword = "授業中";
   Timer? timer;
   Timer? flashTimer;
@@ -220,9 +221,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
   // 音声認識の開始
   Future<void> startRecording() async {
-    setState(() {
-      isRecognizing = true;
-    });
+  final recognitionProvider = Provider.of<RecognitionProvider>(context, listen: false);
+  recognitionProvider.startRecognizing();//isRecogniiingをtrueにする
 
     // サーバーの/startエンドポイントにリクエストを送信
     try {
@@ -232,7 +232,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         print("音声認識を開始しました");
         // 定期的にデータを取得するためのタイマーを設定
         timer = Timer.periodic(Duration(seconds: 1), (Timer t) {
-          if (isRecognizing) {
+          if (recognitionProvider.isRecognizing) {
             fetchRecognizedText();
           } else {
             t.cancel();
@@ -251,9 +251,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
   // 音声認識の停止
   Future<void> stopRecording() async {
-    setState(() {
-      isRecognizing = false;
-    });
+    final recognitionProvider = Provider.of<RecognitionProvider>(context, listen: false);
+    recognitionProvider.stopRecognizing();
 
     // タイマーが設定されていればキャンセル
     timer?.cancel();
@@ -513,6 +512,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     final double cardHeight =
         MediaQuery.of(context).size.height / 6; // 画面の高さの1/6
     final classProvider = Provider.of<ClassProvider>(context);
+    final recognitionProvider = Provider.of<RecognitionProvider>(context);
+
     return BasePage(
       body: SingleChildScrollView(
         child: Stack(
@@ -622,16 +623,16 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                     // 録音開始/停止ボタン（色と視認性の改善）
                     ElevatedButton.icon(
                       icon: Icon(
-                        isRecognizing ? Icons.stop : Icons.mic,
+                        recognitionProvider.isRecognizing ? Icons.stop : Icons.mic,
                         color: Colors.black,
                       ),
                       label: Text(
-                        isRecognizing ? '停止' : '開始',
+                        recognitionProvider.isRecognizing ? '停止' : '開始',
                         style: TextStyle(color: Colors.black),
                       ),
-                      onPressed: isRecognizing ? stopRecording : startRecording,
+                      onPressed: recognitionProvider.isRecognizing ? stopRecording : startRecording,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isRecognizing
+                        backgroundColor: recognitionProvider.isRecognizing
                             ? Colors.redAccent
                             : Colors.tealAccent, // より視認性の高い色に変更
                         padding:
