@@ -35,21 +35,16 @@ c_jud = True
 
 def audio_callback(indata, frames, time, status):
     global audio_buffer, c_jud, audio_queue
+    if status:
+        print(status, file=sys.stderr)
 
-    if not c_jud:
-        audio_buffer.clear()  # バッファをクリア
-        audio_queue.queue.clear() # キューもクリア
+    if c_jud:
+        audio_queue.put(bytes(indata))
     else:
-        # 音声データをバッファに追加
-        audio_buffer.extend(bytes(indata))
-
-    # 音声データを一定の間隔で送信
-    if len(audio_buffer) >= 1600:  # 少し小さめの単位でデータを送信
-        with audio_queue.mutex:
-            audio_queue.put(bytes(audio_buffer))
-        audio_buffer.clear()  # データ送信後にバッファをクリア
-    
-
+        c_jud = True
+        audio_queue = queue.Queue()# キューもクリア
+        audio_queue.put(bytes(indata)) 
+        
 # Google Speech-to-Textストリーミング認識
 def recognize_audio():
     global recognized_text
@@ -81,9 +76,9 @@ def recognize_audio():
         responses = client.streaming_recognize(config=streaming_config, requests=requests())
 
         # 認識タイムアウト設定
-        timeout = 5
+        timeout = 3
+        #while is_recognizing:
         start_time = time.time()  # 認識開始時に1回だけスタートタイムをリセット
-
         for response in responses:
             for result in response.results:
                 current_text = result.alternatives[0].transcript.strip()  # 認識されたテキスト
@@ -93,12 +88,8 @@ def recognize_audio():
                     recognized_text = current_text  # 最終結果を更新
                     print("認識結果:", recognized_text)
                     current_text = ""  # 次回認識のためにcurrent_textをリセット
-
-                    # 音声認識タイムアウト後、音声データをリセット
-                    if not c_jud:  # 停止している状態なら再度開始
-                        c_jud = True
-                        audio_buffer.clear()  # バッファのクリア
-                        print("音声データをリセットして再開")
+                    #c_jud = False
+                    #audio_queue = queue.Queue()
 
                     start_time = time.time()  # 新たに認識開始の時間をリセット
 
