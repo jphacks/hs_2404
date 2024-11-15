@@ -514,205 +514,209 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         MediaQuery.of(context).size.height / 6; // 画面の高さの1/6
     final classProvider = Provider.of<ClassProvider>(context);
     return BasePage(
-      body: Stack(
-        children: [
-          // グラデーション背景または点滅する背景の表示
-          showGradient
-              ? AnimatedContainer(
-                  duration: Duration(milliseconds: 500),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Colors.indigoAccent, Colors.deepPurpleAccent],
+      body: SingleChildScrollView(
+        child: Stack(
+          children: [
+            // グラデーション背景または点滅する背景の表示
+            showGradient
+                ? AnimatedContainer(
+                    duration: Duration(milliseconds: 500),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Colors.indigoAccent, Colors.deepPurpleAccent],
+                      ),
                     ),
+                  )
+                : AnimatedContainer(
+                    duration: Duration(milliseconds: 500),
+                    color: backgroundColor, // 点滅する背景色
                   ),
-                )
-              : AnimatedContainer(
-                  duration: Duration(milliseconds: 500),
-                  color: backgroundColor, // 点滅する背景色
-                ),
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // 認識結果を表示するカード（縦に広く調整）
-                  Column(
-                    children: List.generate(summarizedTexts.length, (index) {
-                      return GestureDetector(
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                content: SingleChildScrollView(
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        summarizedTexts[index],
-                                        style: TextStyle(
-                                            fontSize: 20, color: Colors.yellow),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      SizedBox(height: 20),
-                                      Text(
-                                        recognizedTexts[index],
-                                        style: TextStyle(
-                                            fontSize: 24, color: Colors.white),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      SizedBox(height: 20),
-                                    ],
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // 認識結果を表示するカード（縦に広く調整）
+                    Column(
+                      children: List.generate(summarizedTexts.length, (index) {
+                        return GestureDetector(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  content: SingleChildScrollView(
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          summarizedTexts[index],
+                                          style: TextStyle(
+                                              fontSize: 20,
+                                              color: Colors.yellow),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        SizedBox(height: 20),
+                                        Text(
+                                          recognizedTexts[index],
+                                          style: TextStyle(
+                                              fontSize: 24,
+                                              color: Colors.white),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        SizedBox(height: 20),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                    child: Text('閉じる'),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          height: cardHeight,
-                          padding: EdgeInsets.all(20.0),
-                          margin: EdgeInsets.symmetric(vertical: 20.0),
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 10,
-                                offset: Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: [
-                                Text(
-                                  summarizedTexts[index],
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    color: (keyword == "授業中")
-                                        ? Colors.white
-                                        : Colors.redAccent,
-                                  ),
-                                  textAlign: TextAlign.center,
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Text('閉じる'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            height: cardHeight,
+                            padding: EdgeInsets.all(20.0),
+                            margin: EdgeInsets.symmetric(vertical: 20.0),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 10,
+                                  offset: Offset(0, 5),
                                 ),
                               ],
                             ),
+                            child: SingleChildScrollView(
+                              child: Column(
+                                children: [
+                                  Text(
+                                    summarizedTexts[index],
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      color: (keyword == "授業中")
+                                          ? Colors.white
+                                          : Colors.redAccent,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
-                      );
-                    }),
-                  ),
-                  SizedBox(height: 20),
-                  // 録音開始/停止ボタン（色と視認性の改善）
-                  ElevatedButton.icon(
-                    icon: Icon(
-                      isRecognizing ? Icons.stop : Icons.mic,
-                      color: Colors.black,
+                        );
+                      }),
                     ),
-                    label: Text(
-                      isRecognizing ? '停止' : '開始',
-                      style: TextStyle(color: Colors.black),
-                    ),
-                    onPressed: isRecognizing ? stopRecording : startRecording,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isRecognizing
-                          ? Colors.redAccent
-                          : Colors.tealAccent, // より視認性の高い色に変更
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      elevation: 10,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  // キーワード表示
-                  Container(
-                    padding: EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      keyword,
-                      style: TextStyle(
-                        fontSize: 24,
-                        color: (keyword == "授業中")
-                            ? Colors.greenAccent
-                            : Colors.redAccent,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  DropdownButton<String>(
-                    hint: Text("授業を選択"),
-                    value: context.watch<ClassProvider>().selectedClass,
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        setState(() {
-                          context
-                              .read<ClassProvider>()
-                              .setSelectedClass(newValue);
-                          print(
-                              "選択された授業: ${context.read<ClassProvider>().selectedClass}");
-                        });
-                      }
-                    },
-                    items: classProvider.classes
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                  ),
-                  SizedBox(height: 20),
-                  // 設定ボタンの追加
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        showSettingsDialog(context); // 設定ダイアログを表示
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.cyanAccent, // ボタンの背景色
-                        padding: EdgeInsets.all(16), // アイコンの周りのパディング
-                        shape: CircleBorder(), // ボタンを円形にする
-                        elevation: 0, // 影を削除
-                      ),
-                      child: Icon(
-                        Icons.settings,
+                    SizedBox(height: 20),
+                    // 録音開始/停止ボタン（色と視認性の改善）
+                    ElevatedButton.icon(
+                      icon: Icon(
+                        isRecognizing ? Icons.stop : Icons.mic,
                         color: Colors.black,
                       ),
+                      label: Text(
+                        isRecognizing ? '停止' : '開始',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                      onPressed: isRecognizing ? stopRecording : startRecording,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isRecognizing
+                            ? Colors.redAccent
+                            : Colors.tealAccent, // より視認性の高い色に変更
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        elevation: 10,
+                      ),
                     ),
-                  ),
-                ],
+                    SizedBox(height: 20),
+                    // キーワード表示
+                    Container(
+                      padding: EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 10,
+                            offset: Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        keyword,
+                        style: TextStyle(
+                          fontSize: 24,
+                          color: (keyword == "授業中")
+                              ? Colors.greenAccent
+                              : Colors.redAccent,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    DropdownButton<String>(
+                      hint: Text("授業を選択"),
+                      value: context.watch<ClassProvider>().selectedClass,
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            context
+                                .read<ClassProvider>()
+                                .setSelectedClass(newValue);
+                            print(
+                                "選択された授業: ${context.read<ClassProvider>().selectedClass}");
+                          });
+                        }
+                      },
+                      items: classProvider.classes
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
+                    SizedBox(height: 20),
+                    // 設定ボタンの追加
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          showSettingsDialog(context); // 設定ダイアログを表示
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.cyanAccent, // ボタンの背景色
+                          padding: EdgeInsets.all(16), // アイコンの周りのパディング
+                          shape: CircleBorder(), // ボタンを円形にする
+                          elevation: 0, // 影を削除
+                        ),
+                        child: Icon(
+                          Icons.settings,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
