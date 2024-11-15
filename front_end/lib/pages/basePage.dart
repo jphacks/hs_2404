@@ -16,9 +16,9 @@ class BasePage extends StatelessWidget {
     bool isModalVisible = context.watch<ModalProvider>().isModalVisible;
 
     return Scaffold(
-      appBar: AppBar(
+      /* appBar: AppBar(
         title: Text('taskEcho'),
-      ),
+      ), */
       //backgroundColor: Color(0xFF0F0F1F),
       body: Stack(
         children: [
