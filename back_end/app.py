@@ -20,6 +20,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from datetime import datetime
+from time import sleep
 
 # Flaskサーバーの初期化
 app = Flask(__name__)
@@ -163,6 +164,7 @@ def set_keywords():
 def summarize(text):
     prompt = f"次のテキストを要約して結果のみをください.: {text}"
     gemini_pro = genai.GenerativeModel("gemini-pro")
+    sleep(1) #さすがに(?)
     response = gemini_pro.generate_content(prompt)
     return response.text
 
