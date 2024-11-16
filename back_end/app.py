@@ -33,6 +33,8 @@ partial_text = ""
 is_recognizing = False  # 音声認識の状態を保持する変数
 audio_buffer = bytearray()
 c_jud = True
+previous_text_long = 0  # previous_text_longを初期化
+
 
 def audio_callback(indata, frames, time, status):
     global audio_buffer, c_jud, audio_queue
@@ -52,6 +54,7 @@ def recognize_audio():
     global partial_text
     global is_recognizing
     global c_jud, audio_buffer, audio_queue
+    global previous_text_long
 
     # ストリーミング認識設定
     config = speech.RecognitionConfig(
@@ -76,25 +79,30 @@ def recognize_audio():
         responses = client.streaming_recognize(config=streaming_config, requests=requests())
 
         # 認識タイムアウト設定
-        timeout = 3
+        timeout = 10
         #while is_recognizing:
         start_time = time.time()  # 認識開始時に1回だけスタートタイムをリセット
         for response in responses:
             for result in response.results:
                 current_text = result.alternatives[0].transcript.strip()  # 認識されたテキスト
 
-                if (time.time() - start_time > timeout) or result.is_final:#timeoutより長くなっても認識結果とする
+                if (time.time() - start_time > timeout): #or result.is_final:#timeoutより長くなっても認識結果とする
                     # 最終結果の場合
-                    recognized_text = current_text  # 最終結果を更新
+                    recognized_text = current_text[previous_text_long:]  # 最終結果を更新
                     print("認識結果:", recognized_text)
+
+                    print("len(current_text):" , len(current_text))
+                    previous_text_long = len(current_text) #一つ前の認識結果の文字数
+                    print("previous_text_long:", previous_text_long)
+
                     current_text = ""  # 次回認識のためにcurrent_textをリセット
-                  
+                    
                     start_time = time.time()  # 新たに認識開始の時間をリセット
 
                 else:
                     # 部分的な認識結果を処理
                     partial_text = current_text
-                    print("部分的な認識結果:", partial_text)
+                    #print("部分的な認識結果:", partial_text)
 
 
 # 音声認識を開始するエンドポイント
@@ -114,19 +122,13 @@ def start_recognition():
 @app.route('/stop', methods=['POST'])
 def stop_recognition():
     global is_recognizing
+    global partial_text
+    global previous_text_long
     is_recognizing = False
-    return jsonify({"message": "音声認識を停止しました"}), 200
+    partial_text = ""
+    previous_text_long = 0
 
-""" # /recognizeエンドポイントを作成
-@app.route('/recognize', methods=['GET'])
-def get_recognized_text():
-    keyword = "授業中"
-    keyword_included = ["重要", "大事", "課題", "提出", "テスト", "レポート", "締め切り", "期限"]
-    for k in keyword_included:
-        if k in partial_text[-20:]:
-            keyword = k
-            break
-    return jsonify({'recognized_text': recognized_text, 'keyword': keyword}) """
+    return jsonify({"message": "音声認識を停止しました"}), 200
 
 # グローバル変数としてキーワードのリストを初期化
 keyword_included = ["重要", "大事", "課題", "提出", "テスト", "レポート", "締め切り", "期限"]
@@ -149,19 +151,14 @@ def summarize(text):
 @app.route('/recognize', methods=['GET'])
 def get_recognized_text():
     keyword = "授業中"
-    existKeyword = False
     summary = ""
     for k in keyword_included:
         if k in partial_text[-20:]:
             keyword = k
-            existKeyword = True
             break
-    if existKeyword:
-        """ if recognized_text != "":
+        if k in recognized_text:
             summary = summarize(recognized_text)
-        else: """
-        summary = summarize(partial_text)
-    return jsonify({'partial_text' : partial_text, 'keyword': keyword, 'summarized_text': summary})
+    return jsonify({'recognized_text' : recognized_text ,'keyword': keyword, 'summarized_text': summary})
 
 # Flaskサーバーの実行
 if __name__ == '__main__':

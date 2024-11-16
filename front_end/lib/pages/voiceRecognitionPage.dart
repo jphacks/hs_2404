@@ -69,6 +69,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         Provider.of<TextsDataProvider>(context, listen: false);
     final selectedClass =
         Provider.of<ClassProvider>(context, listen: false).selectedClass;
+    final recognitionProvider =
+        Provider.of<RecognitionProvider>(context, listen: false);
 
     try {
       final response =
@@ -76,8 +78,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        //final newRecognizedText = data['recognized_text']; //?? "データが空です";
-        final newRecognizedText = data['partial_text']; //?? "データが空です";
+        final newRecognizedText = data['recognized_text']; //?? "データが空です";
+        //final newRecognizedText = data['partial_text']; //?? "データが空です";
         final newSummarizedText = data['summarized_text']; //?? "要約データが空です";
 
         setState(() {
@@ -102,11 +104,13 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
           currentIndex = recognizedTexts.length - 1; // 最新のデータのインデックスを更新
 
-          keyword = data['keyword'];
-          if (keyword != "授業中") {
-            startFlashing(); // 点滅開始
-          } else {
-            stopFlashing(); // 点滅停止
+          if (recognitionProvider.isRecognizing) {
+            keyword = data['keyword'];
+            if (keyword != "授業中") {
+              startFlashing(); // 点滅開始
+            } else {
+              stopFlashing(); // 点滅停止
+            }
           }
         });
 
@@ -223,8 +227,9 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
   // 音声認識の開始
   Future<void> startRecording() async {
-  final recognitionProvider = Provider.of<RecognitionProvider>(context, listen: false);
-  recognitionProvider.startRecognizing();//isRecogniiingをtrueにする
+    final recognitionProvider =
+        Provider.of<RecognitionProvider>(context, listen: false);
+    recognitionProvider.startRecognizing(); //isRecogniiingをtrueにする
 
     // サーバーの/startエンドポイントにリクエストを送信
     try {
@@ -253,7 +258,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
   // 音声認識の停止
   Future<void> stopRecording() async {
-    final recognitionProvider = Provider.of<RecognitionProvider>(context, listen: false);
+    final recognitionProvider =
+        Provider.of<RecognitionProvider>(context, listen: false);
     recognitionProvider.stopRecognizing();
 
     // タイマーが設定されていればキャンセル
@@ -517,26 +523,26 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     final recognitionProvider = Provider.of<RecognitionProvider>(context);
 
     return BasePage(
-      body: SingleChildScrollView(
-        child: Stack(
-          children: [
-            // グラデーション背景または点滅する背景の表示
-            showGradient
-                ? AnimatedContainer(
-                    duration: Duration(milliseconds: 500),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Colors.indigoAccent, Colors.deepPurpleAccent],
-                      ),
+      body: Stack(
+        children: [
+          // グラデーション背景または点滅する背景の表示
+          showGradient
+              ? AnimatedContainer(
+                  duration: Duration(milliseconds: 500),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Colors.indigoAccent, Colors.deepPurpleAccent],
                     ),
-                  )
-                : AnimatedContainer(
-                    duration: Duration(milliseconds: 500),
-                    color: backgroundColor, // 点滅する背景色
                   ),
-            Center(
+                )
+              : AnimatedContainer(
+                  duration: Duration(milliseconds: 500),
+                  color: backgroundColor, // 点滅する背景色
+                ),
+          SingleChildScrollView(
+            child: Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Column(
@@ -625,14 +631,18 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                     // 録音開始/停止ボタン（色と視認性の改善）
                     ElevatedButton.icon(
                       icon: Icon(
-                        recognitionProvider.isRecognizing ? Icons.stop : Icons.mic,
+                        recognitionProvider.isRecognizing
+                            ? Icons.stop
+                            : Icons.mic,
                         color: Colors.black,
                       ),
                       label: Text(
                         recognitionProvider.isRecognizing ? '停止' : '開始',
                         style: TextStyle(color: Colors.black),
                       ),
-                      onPressed: recognitionProvider.isRecognizing ? stopRecording : startRecording,
+                      onPressed: recognitionProvider.isRecognizing
+                          ? stopRecording
+                          : startRecording,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: recognitionProvider.isRecognizing
                             ? Colors.redAccent
@@ -718,8 +728,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
