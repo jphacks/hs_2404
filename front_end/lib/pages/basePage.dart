@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/MordalProvider.dart';
 import 'summaryPage.dart';
-import 'taskManagementPage.dart';
-import 'settingPage.dart';
 import 'voiceRecognitionPage.dart';
 import '../providers/recognitionProvider.dart';
 
@@ -136,7 +134,7 @@ class BasePage extends StatelessWidget {
                             },
                           ),
                           Divider(color: Colors.grey),
-                          ListTile(
+                          /* ListTile(
                             leading: Icon(Icons.task, color: Colors.cyanAccent),
                             title: Text('課題管理',
                                 style: TextStyle(color: Colors.white)),
@@ -149,8 +147,8 @@ class BasePage extends StatelessWidget {
                               context.read<ModalProvider>().toggleModal();
                             },
                           ),
-                          Divider(color: Colors.grey),
-                          ListTile(
+                          Divider(color: Colors.grey), */
+                          /* ListTile(
                             leading:
                                 Icon(Icons.settings, color: Colors.cyanAccent),
                             title: Text('設定',
@@ -163,7 +161,7 @@ class BasePage extends StatelessWidget {
                               );
                               context.read<ModalProvider>().toggleModal();
                             },
-                          ),
+                          ), */
                         ],
                       ),
                     ),
