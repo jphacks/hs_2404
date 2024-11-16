@@ -149,7 +149,7 @@ def summarize(text):
 @app.route('/recognize', methods=['GET'])
 def get_recognized_text():
     keyword = "授業中"
-    exitKeyword = False
+    existKeyword = False
     summary = ""
     for k in keyword_included:
         if k in partial_text[-20:]:
