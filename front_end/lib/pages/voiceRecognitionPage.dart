@@ -43,6 +43,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   ];
   int currentIndex = 0; //要約とかの文章を受け取るリストのインデックスを管理する変数
   TextEditingController classController = TextEditingController();
+  // 呼び出し済みのsummarizedTextsを追跡するセットを定義
+  Set<String> calledeventTime = {};
 
   //キーワードをapp.pyに送信
   Future<void> sendKeywords() async {
@@ -93,9 +95,9 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                   summarizedTexts.last != newSummarizedText) &&
               newSummarizedText != "" &&
               newRecognizedText != "") {
-
-                // existKeywordがtrueの場合、newSummarizedTextの先頭に"☆"を追加
-          final displaySummarizedText = existKeyword ? "☆$newSummarizedText☆" : newSummarizedText;
+            // existKeywordがtrueの場合、newSummarizedTextの先頭に"☆"を追加
+            final displaySummarizedText =
+                existKeyword ? "☆$newSummarizedText☆" : newSummarizedText;
             recognizedTexts.add(newRecognizedText); //こっちはここでの表示用
             summarizedTexts.add(displaySummarizedText);
 
@@ -122,16 +124,17 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
           }
         });
 
+        print('認識結果：${summarizedTexts[currentIndex]}');
         // 時刻情報を含むか確認し、GoogleカレンダーのURLを生成して開く
-        String? eventTime = await extractTime(recognizedTexts[currentIndex]);
+        String? eventTime = await extractTime(summarizedTexts[currentIndex]);
         if (eventTime != null) {
-          String calendarUrl = generateGoogleCalendarUrl(
-              eventTime, recognizedTexts[currentIndex]);
-          if (await canLaunchUrl(Uri.parse(calendarUrl))) {
-            await launchUrl(Uri.parse(calendarUrl));
-            print('カレンダーURLを開きました。');
+          if (!calledeventTime.contains(eventTime)) {
+            await createEvent(eventTime, keyword);
+            print("createEvent関数が呼び出されました");
+            // 呼び出し済みのsummarizedTextsに追加
+            calledeventTime.add(eventTime);
           } else {
-            print('カレンダーURLを開けませんでした。');
+            print('このeventTimeは既に処理されています。');
           }
         }
       } else {
@@ -163,10 +166,10 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         stopFlashing();
       });
       // 10秒後に再度点滅を許可するタイマーを設定
-    canFlash = false;
-    Timer(Duration(seconds: 10), () {
-      canFlash = true;
-    });
+      canFlash = false;
+      Timer(Duration(seconds: 10), () {
+        canFlash = true;
+      });
     }
   }
 
@@ -194,6 +197,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   // gooラボの時刻情報正規化APIを呼び出す関数
   Future<String?> extractTime(String text) async {
     final apiKey = dotenv.env['API_KEY']; // 環境変数からAPIキーを取得
+    print("=====extractTime=====");
     if (apiKey == null) {
       print('APIキーが設定されていません');
       return null;
@@ -209,9 +213,10 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
       print('Received response with status code: ${response.statusCode}');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        print('Received data: $data');
         if (data['datetime_list'] != null && data['datetime_list'].isNotEmpty) {
-          final datetime = data['datetime_list'][0]['datetime'];
-          print(datetime);
+          final datetime = data['datetime_list'][0][1].toString();
+          print('Extracted datetime: $datetime');
           return datetime;
         } else {
           print('datetime_listが空です。');
@@ -226,20 +231,37 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         recognizedTexts[currentIndex] = "データ取得エラー";
       });
     }
+    print("==========");
     return null;
   }
 
   // GoogleカレンダーのURLを生成する関数
-  String generateGoogleCalendarUrl(String time, String description) {
-    final now = DateTime.now();
-    final dateFormat = DateFormat('yyyyMMdd');
-    final timeFormat = DateFormat('HHmmss');
-    final date = dateFormat.format(now);
-    final startTime = timeFormat.format(DateFormat('HH:mm').parse(time));
-    final endTime = timeFormat
-        .format(DateFormat('HH:mm').parse(time).add(Duration(hours: 1)));
-
-    return 'https://www.google.com/calendar/render?action=TEMPLATE&text=$description&dates=${date}T$startTime/${date}T$endTime';
+  Future<void> createEvent(String eventTime, String currentIndex) async {
+    try {
+      final url = Uri.parse('http://localhost:5000/create_event');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'eventTime': eventTime,
+          'currentIndex': currentIndex,
+        }),
+      );
+      print("=====createEvent=====");
+      if (response.statusCode == 200) {
+        // 成功時の処理
+        print('Event created successfully');
+      } else {
+        // エラーハンドリング
+        print(
+            'Failed to create event with status code: ${response.statusCode}');
+        print('Response body: ${response.body}');
+      }
+    } catch (e) {
+      // ネットワークエラーやその他の例外をキャッチ
+      print('An error occurred: $e');
+    }
+    print("==========");
   }
 
   // 音声認識の開始
