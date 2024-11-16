@@ -91,9 +91,7 @@ def recognize_audio():
                     recognized_text = current_text[previous_text_long:]  # 最終結果を更新
                     print("認識結果:", recognized_text)
 
-                    print("len(current_text):" , len(current_text))
                     previous_text_long = len(current_text) #一つ前の認識結果の文字数
-                    print("previous_text_long:", previous_text_long)
 
                     current_text = ""  # 次回認識のためにcurrent_textをリセット
                     
@@ -102,7 +100,7 @@ def recognize_audio():
                 else:
                     # 部分的な認識結果を処理
                     partial_text = current_text
-                    #print("部分的な認識結果:", partial_text)
+                    print("部分的な認識結果:", partial_text)
 
 
 # 音声認識を開始するエンドポイント
