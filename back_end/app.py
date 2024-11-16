@@ -29,6 +29,7 @@ client = get_speech_client()
 # キューと変数の初期化
 audio_queue = queue.Queue()
 recognized_text = ""
+summary = ""
 partial_text = ""
 is_recognizing = False  # 音声認識の状態を保持する変数
 audio_buffer = bytearray()
@@ -51,6 +52,7 @@ def audio_callback(indata, frames, time, status):
 # Google Speech-to-Textストリーミング認識
 def recognize_audio():
     global recognized_text
+    global summary
     global partial_text
     global is_recognizing
     global c_jud, audio_buffer, audio_queue
@@ -88,19 +90,20 @@ def recognize_audio():
 
                 if (time.time() - start_time > timeout): #or result.is_final:#timeoutより長くなっても認識結果とする
                     # 最終結果の場合
-                    recognized_text = current_text[previous_text_long:]  # 最終結果を更新
-                    print("認識結果:", recognized_text)
+                    if is_recognizing:
+                        recognized_text = current_text[previous_text_long:]  # 最終結果を更新
+                        print("認識結果:", recognized_text)
+                        summary = summarize(recognized_text)
+                        print("要約結果:", summary)
+                        previous_text_long = len(current_text) #一つ前の認識結果の文字数
 
-                    previous_text_long = len(current_text) #一つ前の認識結果の文字数
-
-                    current_text = ""  # 次回認識のためにcurrent_textをリセット
-                    
-                    start_time = time.time()  # 新たに認識開始の時間をリセット
-
+                        current_text = ""  # 次回認識のためにcurrent_textをリセット
+                        
+                        start_time = time.time()  # 新たに認識開始の時間をリセット
                 else:
                     # 部分的な認識結果を処理
                     partial_text = current_text
-                    print("部分的な認識結果:", partial_text)
+                    #print("部分的な認識結果:", partial_text)
 
 
 # 音声認識を開始するエンドポイント
@@ -148,15 +151,15 @@ def summarize(text):
 # /recognizeエンドポイントを更新
 @app.route('/recognize', methods=['GET'])
 def get_recognized_text():
+    global summary
     keyword = "授業中"
-    summary = ""
+    exist_keyword = False
     for k in keyword_included:
         if k in partial_text[-20:]:
             keyword = k
+            exist_keyword = True
             break
-        if k in recognized_text:
-            summary = summarize(recognized_text)
-    return jsonify({'recognized_text' : recognized_text ,'keyword': keyword, 'summarized_text': summary})
+    return jsonify({'recognized_text' : recognized_text ,'keyword': keyword, 'summarized_text': summary}), 200
 
 # Flaskサーバーの実行
 if __name__ == '__main__':

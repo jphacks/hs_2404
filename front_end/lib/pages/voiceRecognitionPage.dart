@@ -27,6 +27,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   Timer? flashTimer;
   bool isFlashing = false; // 点滅フラグ
   bool showGradient = true; // デフォルトの背景をグラデーションに戻すためのフラグ
+  //bool existKeyword = false; // キーワードが存在するかのフラグ
   Color backgroundColor = Colors.indigoAccent; // 点滅中の背景色管理用
   List<String> keywords = [
     "重要",
@@ -87,7 +88,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
           if ((recognizedTexts.isEmpty ||
                   recognizedTexts.last != newRecognizedText) && 
               (summarizedTexts.isEmpty ||
-                  summarizedTexts.last != newSummarizedText) && newSummarizedText != "") {
+                  summarizedTexts.last != newSummarizedText) && newSummarizedText != "" && newRecognizedText != "") {
             recognizedTexts.add(newRecognizedText); //こっちはここでの表示用
             summarizedTexts.add(newSummarizedText);
 
@@ -115,7 +116,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         });
 
         // 時刻情報を含むか確認し、GoogleカレンダーのURLを生成して開く
-        String? eventTime = await extractTime(recognizedTexts[currentIndex]);
+        /* String? eventTime = await extractTime(recognizedTexts[currentIndex]);
         if (eventTime != null) {
           String calendarUrl = generateGoogleCalendarUrl(
               eventTime, recognizedTexts[currentIndex]);
@@ -125,7 +126,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
           } else {
             print('カレンダーURLを開けませんでした。');
           }
-        }
+        } */
       } else {
         print('サーバーからデータを取得できませんでした。ステータスコード: ${response.statusCode}');
       }
@@ -325,6 +326,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
+
                   child: Text(
                     '授業の設定',
                     style: TextStyle(color: Colors.black),
@@ -614,9 +616,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                                     summarizedTexts[index],
                                     style: TextStyle(
                                       fontSize: 24,
-                                      color: (keyword == "授業中")
-                                          ? Colors.white
-                                          : Colors.redAccent,
+                                      color: Colors.white,
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
