@@ -27,7 +27,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   Timer? flashTimer;
   bool isFlashing = false; // 点滅フラグ
   bool showGradient = true; // デフォルトの背景をグラデーションに戻すためのフラグ
-  bool canFlash = true; // フラグを追加
+  //bool canFlash = true; // フラグを追加
   bool existKeyword = false; // キーワードが存在するかのフラグ
   Color backgroundColor = Colors.indigoAccent; // 点滅中の背景色管理用
   List<String> keywords = [
@@ -150,7 +150,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
   // 点滅を開始する（keywordの状態によって切り替え）
   void startFlashing() {
-    if (!isFlashing && canFlash) {
+    if (!isFlashing) {
       isFlashing = true;
       showGradient = false; // 点滅中はグラデーションを非表示に
       flashTimer = Timer.periodic(Duration(milliseconds: 500), (Timer t) {
@@ -160,15 +160,6 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
               ? Colors.white
               : Colors.redAccent;
         });
-      });
-      // 3秒後に点滅を停止するタイマーを設定
-      Timer(Duration(seconds: 5), () {
-        stopFlashing();
-      });
-      // 10秒後に再度点滅を許可するタイマーを設定
-      canFlash = false;
-      Timer(Duration(seconds: 10), () {
-        canFlash = true;
       });
     }
   }
