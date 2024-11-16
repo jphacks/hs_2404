@@ -515,8 +515,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     final recognitionProvider = Provider.of<RecognitionProvider>(context);
 
     return BasePage(
-      body: SingleChildScrollView(
-        child: Stack(
+      body: Stack(
           children: [
             // グラデーション背景または点滅する背景の表示
             showGradient
@@ -534,7 +533,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                     duration: Duration(milliseconds: 500),
                     color: backgroundColor, // 点滅する背景色
                   ),
-            Center(
+            SingleChildScrollView(
+            child: Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Column(
@@ -716,9 +716,10 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                 ),
               ),
             ),
+            ),
           ],
         ),
-      ),
+      
     );
   }
 }
