@@ -11,6 +11,7 @@ from flask_cors import CORS
 from threading import Thread
 from dotenv import load_dotenv
 import google.generativeai as genai
+from collections import deque
 
 # Flaskサーバーの初期化
 app = Flask(__name__)
@@ -28,13 +29,16 @@ client = get_speech_client()
 
 # キューと変数の初期化
 audio_queue = queue.Queue()
+recognized_texts = deque(maxlen=10)
 recognized_text = ""
 summary = ""
 partial_text = ""
 is_recognizing = False  # 音声認識の状態を保持する変数
+finishSummarize = False # 要約終了フラグ
 audio_buffer = bytearray()
 c_jud = True
 previous_text_long = 0  # previous_text_longを初期化
+
 
 
 def audio_callback(indata, frames, time, status):
@@ -93,8 +97,8 @@ def recognize_audio():
                     if is_recognizing:
                         recognized_text = current_text[previous_text_long:]  # 最終結果を更新
                         print("認識結果:", recognized_text)
-                        summary = summarize(recognized_text)
-                        print("要約結果:", summary)
+                        update_recognized_text(recognized_text)
+
                         previous_text_long = len(current_text) #一つ前の認識結果の文字数
 
                         current_text = ""  # 次回認識のためにcurrent_textをリセット
@@ -104,6 +108,12 @@ def recognize_audio():
                     # 部分的な認識結果を処理
                     partial_text = current_text
                     #print("部分的な認識結果:", partial_text)
+
+# 新しいrecognized_textを設定し、要約を行う関数
+def update_recognized_text(new_text):
+    summary = summarize(new_text)
+    print("要約結果:", summary)
+    recognized_texts.append((new_text, summary))
 
 
 # 音声認識を開始するエンドポイント
@@ -159,6 +169,10 @@ def get_recognized_text():
             keyword = k
             exist_keyword = True
             break
+    if recognized_texts:
+        recognized_text, summary = recognized_texts[-1]
+    else:
+        recognized_text, summary = "", ""
     return jsonify({'recognized_text' : recognized_text ,'keyword': keyword, 'summarized_text': summary, 'exist_keyword' : exist_keyword}), 200
 
 # Flaskサーバーの実行
