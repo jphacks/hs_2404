@@ -157,11 +157,11 @@ def get_recognized_text():
             existKeyword = True
             break
     if existKeyword:
-        if recognized_text != "":
+        """ if recognized_text != "":
             summary = summarize(recognized_text)
-        else:
-            summary = summarize(partial_text)
-    return jsonify({'recognized_text': recognized_text, 'keyword': keyword, 'summarized_text': summary, 'partial_text' : partial_text})
+        else: """
+        summary = summarize(partial_text)
+    return jsonify({'partial_text' : partial_text, 'keyword': keyword, 'summarized_text': summary})
 
 # Flaskサーバーの実行
 if __name__ == '__main__':
