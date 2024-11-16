@@ -76,15 +76,18 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final newRecognizedText = data['recognized_text'] ?? "データが空です";
-        final newSummarizedText = data['summarized_text'] ?? "要約データが空です";
+        String newRecognizedText = data['recognized_text']; //?? "データが空です";
+        final newSummarizedText = data['summarized_text']; //?? "要約データが空です";
+        final newPartialText = data['partial_text'];
 
         setState(() {
+          if(newRecognizedText == "")
+            newRecognizedText = newPartialText;
           // 最新のデータが前回のデータと異なる場合のみリストに追加
           if ((recognizedTexts.isEmpty ||
-                  recognizedTexts.last != newRecognizedText) &&
+                  recognizedTexts.last != newRecognizedText) && 
               (summarizedTexts.isEmpty ||
-                  summarizedTexts.last != newSummarizedText)) {
+                  summarizedTexts.last != newSummarizedText) && newSummarizedText != "") {
             recognizedTexts.add(newRecognizedText); //こっちはここでの表示用
             summarizedTexts.add(newSummarizedText);
 
