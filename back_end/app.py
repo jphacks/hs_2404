@@ -12,6 +12,14 @@ from threading import Thread
 from dotenv import load_dotenv
 import google.generativeai as genai
 from collections import deque
+import os.path
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from datetime import datetime
 from time import sleep
 
 # Flaskサーバーの初期化
@@ -183,6 +191,72 @@ def get_recognized_text():
     else:
         recognized_text, summary = "", ""
     return jsonify({'recognized_text' : recognized_text ,'keyword': keyword, 'summarized_text': summary, 'exist_keyword' : exist_keyword}), 200
+
+# If modifying these scopes, delete the file token.json.
+SCOPES = ['https://www.googleapis.com/auth/calendar.events']
+
+# Googleカレンダーにイベントを作成するエンドポイント
+@app.route('/create_event', methods=['POST'])
+def create_event():
+    eventTime = request.json.get('eventTime')
+    current_index = request.json.get('currentIndex')
+    if not eventTime or not current_index:
+        return jsonify({'error': 'Missing eventTime or currentIndex'}), 400
+
+    # eventTimeをdatetimeオブジェクトに変換
+    try:
+        eventTime = datetime.fromisoformat(eventTime)
+    except ValueError:
+        return jsonify({'error': 'Invalid eventTime format'}), 400
+
+    creds = None
+    # The file token.json stores the user's access and refresh tokens, and is
+    # created automatically when the authorization flow completes for the first
+    # time.
+    if os.path.exists("token.json"):
+        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+    # If there are no (valid) credentials available, let the user log in.
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                "assets/credentials.json", SCOPES
+            )
+            creds = flow.run_local_server(port=0)
+            # Save the credentials for the next run
+        with open("token.json", "w") as token:
+            token.write(creds.to_json())
+
+    try:
+        service = build("calendar", "v3", credentials=creds)
+
+        event = {
+            'summary': current_index,
+            'start': {
+                'dateTime': eventTime.isoformat(),
+                'timeZone': 'Japan',
+            },
+            'end': {
+                'dateTime': eventTime.isoformat(),
+                'timeZone': 'Japan',
+            },
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                {'method': 'email', 'minutes': 24 * 60},
+                {'method': 'popup', 'minutes': 10},
+                ],
+            },
+        }
+
+        event = service.events().insert(calendarId='primary', body=event).execute()
+        print('Event created: %s' % (event.get('htmlLink')))
+        return jsonify({'message': 'Event created successfully'}), 200
+
+    except HttpError as error:
+        print(f"An error occurred: {error}")
+        return jsonify({'message': 'An error occurred'}), 400
 
 # Flaskサーバーの実行
 if __name__ == '__main__':
