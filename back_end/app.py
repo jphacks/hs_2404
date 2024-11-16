@@ -12,6 +12,7 @@ from threading import Thread
 from dotenv import load_dotenv
 import google.generativeai as genai
 from collections import deque
+from time import sleep
 
 # Flaskサーバーの初期化
 app = Flask(__name__)
@@ -156,7 +157,15 @@ def summarize(text):
     prompt = f"次のテキストを要約して結果のみをください.: {text}"
     gemini_pro = genai.GenerativeModel("gemini-pro")
     response = gemini_pro.generate_content(prompt)
-    return response.text
+    sleep(1) #さすがに(?)
+
+    # レスポンスの内容をチェック
+    if response.candidates and response.candidates[0].text:
+        return response.candidates[0].text
+    else:
+        # エラーハンドリング
+        print("要約の生成に失敗しました。レスポンス:", response)
+        return "要約の生成に失敗しました。"
 
 # /recognizeエンドポイントを更新
 @app.route('/recognize', methods=['GET'])
