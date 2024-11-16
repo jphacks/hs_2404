@@ -27,7 +27,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   Timer? flashTimer;
   bool isFlashing = false; // 点滅フラグ
   bool showGradient = true; // デフォルトの背景をグラデーションに戻すためのフラグ
-  //bool existKeyword = false; // キーワードが存在するかのフラグ
+  bool canFlash = true; // フラグを追加
+  bool existKeyword = false; // キーワードが存在するかのフラグ
   Color backgroundColor = Colors.indigoAccent; // 点滅中の背景色管理用
   List<String> keywords = [
     "重要",
@@ -82,20 +83,26 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         final newRecognizedText = data['recognized_text']; //?? "データが空です";
         //final newRecognizedText = data['partial_text']; //?? "データが空です";
         final newSummarizedText = data['summarized_text']; //?? "要約データが空です";
+        existKeyword = data['exist_keyword'];
 
         setState(() {
           // 最新のデータが前回のデータと異なる場合のみリストに追加
           if ((recognizedTexts.isEmpty ||
-                  recognizedTexts.last != newRecognizedText) && 
+                  recognizedTexts.last != newRecognizedText) &&
               (summarizedTexts.isEmpty ||
-                  summarizedTexts.last != newSummarizedText) && newSummarizedText != "" && newRecognizedText != "") {
+                  summarizedTexts.last != newSummarizedText) &&
+              newSummarizedText != "" &&
+              newRecognizedText != "") {
+
+                // existKeywordがtrueの場合、newSummarizedTextの先頭に"☆"を追加
+          final displaySummarizedText = existKeyword ? "☆$newSummarizedText☆" : newSummarizedText;
             recognizedTexts.add(newRecognizedText); //こっちはここでの表示用
-            summarizedTexts.add(newSummarizedText);
+            summarizedTexts.add(displaySummarizedText);
 
             textsDataProvider.addRecognizedText(
                 selectedClass, newRecognizedText); //保存用
             textsDataProvider.addSummarizedText(
-                selectedClass, newSummarizedText);
+                selectedClass, displaySummarizedText);
 
             if (recognizedTexts.length > 3) {
               recognizedTexts.removeAt(0);
@@ -116,7 +123,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         });
 
         // 時刻情報を含むか確認し、GoogleカレンダーのURLを生成して開く
-        /* String? eventTime = await extractTime(recognizedTexts[currentIndex]);
+        String? eventTime = await extractTime(recognizedTexts[currentIndex]);
         if (eventTime != null) {
           String calendarUrl = generateGoogleCalendarUrl(
               eventTime, recognizedTexts[currentIndex]);
@@ -126,7 +133,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
           } else {
             print('カレンダーURLを開けませんでした。');
           }
-        } */
+        }
       } else {
         print('サーバーからデータを取得できませんでした。ステータスコード: ${response.statusCode}');
       }
@@ -140,7 +147,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
   // 点滅を開始する（keywordの状態によって切り替え）
   void startFlashing() {
-    if (!isFlashing) {
+    if (!isFlashing && canFlash) {
       isFlashing = true;
       showGradient = false; // 点滅中はグラデーションを非表示に
       flashTimer = Timer.periodic(Duration(milliseconds: 500), (Timer t) {
@@ -151,6 +158,15 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
               : Colors.redAccent;
         });
       });
+      // 3秒後に点滅を停止するタイマーを設定
+      Timer(Duration(seconds: 5), () {
+        stopFlashing();
+      });
+      // 10秒後に再度点滅を許可するタイマーを設定
+    canFlash = false;
+    Timer(Duration(seconds: 10), () {
+      canFlash = true;
+    });
     }
   }
 
@@ -326,7 +342,6 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-
                   child: Text(
                     '授業の設定',
                     style: TextStyle(color: Colors.black),

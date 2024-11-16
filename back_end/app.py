@@ -159,7 +159,7 @@ def get_recognized_text():
             keyword = k
             exist_keyword = True
             break
-    return jsonify({'recognized_text' : recognized_text ,'keyword': keyword, 'summarized_text': summary}), 200
+    return jsonify({'recognized_text' : recognized_text ,'keyword': keyword, 'summarized_text': summary, 'exist_keyword' : exist_keyword}), 200
 
 # Flaskサーバーの実行
 if __name__ == '__main__':
