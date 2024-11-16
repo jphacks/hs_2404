@@ -53,7 +53,7 @@ class ClassDetailPage extends StatelessWidget {
                       builder: (BuildContext context) {
                         return AlertDialog(
                           title: Text('詳細'),
-                          content: Text(recognizedTexts[reverseIndex]),
+                          content: Text(recognizedTexts[reverseIndex], style: TextStyle(fontSize: 24)),
                           actions: [
                             TextButton(
                               onPressed: () {
