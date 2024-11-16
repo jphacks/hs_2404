@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/MordalProvider.dart';
 import 'summaryPage.dart';
+//import 'taskManagementPage.dart';
+//import 'settingPage.dart';
 import 'voiceRecognitionPage.dart';
 import '../providers/recognitionProvider.dart';
 

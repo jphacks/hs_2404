@@ -164,16 +164,9 @@ def set_keywords():
 def summarize(text):
     prompt = f"次のテキストを要約して結果のみをください.: {text}"
     gemini_pro = genai.GenerativeModel("gemini-pro")
-    response = gemini_pro.generate_content(prompt)
     sleep(1) #さすがに(?)
-
-    # レスポンスの内容をチェック
-    if response.candidates and response.candidates[0].text:
-        return response.candidates[0].text
-    else:
-        # エラーハンドリング
-        print("要約の生成に失敗しました。レスポンス:", response)
-        return "要約の生成に失敗しました。"
+    response = gemini_pro.generate_content(prompt)
+    return response.text
 
 # /recognizeエンドポイントを更新
 @app.route('/recognize', methods=['GET'])
